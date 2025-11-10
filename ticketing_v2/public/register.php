@@ -63,10 +63,10 @@ $departments = $user->getDepartmentsByCategory();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Create Account - Nexon Ticketing</title>
-<!-- Theme CSS -->
 <link rel="stylesheet" href="../assets/css/theme.css">
-<!-- OR adjust path based on file location -->
-<link rel="stylesheet" href="../../assets/css/theme.css">
+<script>
+    const PHP_SESSION_THEME = 'light'; // Not logged in yet
+</script>
 <style>
 * {
     margin: 0;
@@ -381,10 +381,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
     }
 });
 </script>
-<!-- Theme Switcher -->
 <script src="../assets/js/theme.js"></script>
-
-<!-- Notifications (only on authenticated pages) -->
-<script src="../assets/js/notifications.js"></script>
 </body>
 </html>

@@ -40,10 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login - Nexon Ticketing System</title>
-<!-- Theme CSS -->
 <link rel="stylesheet" href="../assets/css/theme.css">
-<!-- OR adjust path based on file location -->
-<link rel="stylesheet" href="../../assets/css/theme.css">
 <style>
 :root {
     --primary: #667eea;
@@ -284,7 +281,7 @@ input:focus {
 <body>
 
 <div class="login-container">
-    <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
+    <button class="theme-toggle" id="themeToggle" data-theme-toggle>🌙</button>
     
     <div class="logo">
         <h1>NEXON</h1>
@@ -318,35 +315,6 @@ input:focus {
     </div>
 </div>
 
-<script>
-// Theme management
-function toggleTheme() {
-    const html = document.documentElement;
-    const toggle = document.getElementById('themeToggle');
-    const currentTheme = html.getAttribute('data-theme') || 'light';
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    
-    html.setAttribute('data-theme', newTheme);
-    toggle.textContent = newTheme === 'light' ? '🌙' : '☀️';
-    
-    // Save preference
-    localStorage.setItem('theme', newTheme);
-}
-
-// Load saved theme
-window.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    const html = document.documentElement;
-    const toggle = document.getElementById('themeToggle');
-    
-    html.setAttribute('data-theme', savedTheme);
-    toggle.textContent = savedTheme === 'light' ? '🌙' : '☀️';
-});
-</script>
-<!-- Theme Switcher -->
 <script src="../assets/js/theme.js"></script>
-
-<!-- Notifications (only on authenticated pages) -->
-<script src="../assets/js/notifications.js"></script>
 </body>
 </html>

@@ -42,10 +42,11 @@ $recentTickets = $ticketObj->getTickets($filters, 5, 0);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Nexon Ticketing</title>
-<!-- Theme CSS -->
 <link rel="stylesheet" href="../assets/css/theme.css">
-<!-- OR adjust path based on file location -->
-<link rel="stylesheet" href="../../assets/css/theme.css">
+<script>
+    // Pass PHP session theme to JavaScript
+    const PHP_SESSION_THEME = <?= json_encode($_SESSION['theme'] ?? 'light') ?>;
+</script>
 <style>
 :root {
     --primary: #667eea;
@@ -494,11 +495,11 @@ tr:last-child td {
     <div class="navbar-brand">NEXON</div>
     
     <div class="navbar-actions">
-        <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">
+        <button class="theme-toggle" id="themeToggle" data-theme-toggle>
             <?= ($_SESSION['theme'] ?? 'light') === 'light' ? '🌙' : '☀️' ?>
         </button>
         
-        <button class="notification-btn" onclick="toggleNotifications()">
+        <button class="notification-btn">
             🔔
             <?php if ($unreadCount > 0): ?>
                 <span class="notification-badge"><?= $unreadCount ?></span>
@@ -527,29 +528,15 @@ tr:last-child td {
     </div>
 </nav>
 
-<!-- Notification Dropdown -->
+<!-- Notification Dropdown (managed by notifications.js) -->
 <div class="notification-dropdown" id="notificationDropdown">
     <div class="notification-header">
         <strong>Notifications</strong>
         <?php if ($unreadCount > 0): ?>
-            <a href="#" onclick="markAllRead(); return false;" style="font-size:12px; color:var(--primary)">Mark all read</a>
+            <a href="#" class="mark-all-read" style="font-size:12px; color:var(--primary)">Mark all read</a>
         <?php endif; ?>
     </div>
-    <?php if (empty($notifications)): ?>
-        <div class="empty-state">
-            <div class="empty-state-icon">🔔</div>
-            <p>No notifications</p>
-        </div>
-    <?php else: ?>
-        <?php foreach ($notifications as $notif): ?>
-            <div class="notification-item <?= $notif['is_read'] ? '' : 'unread' ?>" 
-                 onclick="markAsRead(<?= $notif['id'] ?>)">
-                <div class="notification-title"><?= htmlspecialchars($notif['title']) ?></div>
-                <div class="notification-message"><?= htmlspecialchars($notif['message']) ?></div>
-                <div class="notification-time"><?= date('M j, g:i A', strtotime($notif['created_at'])) ?></div>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <div class="notification-list"></div>
 </div>
 
 <!-- Main Container -->
@@ -748,79 +735,8 @@ tr:last-child td {
     </div>
 </div>
 
-<script>
-// Theme management
-function toggleTheme() {
-    const html = document.documentElement;
-    const toggle = document.getElementById('themeToggle');
-    const currentTheme = html.getAttribute('data-theme') || 'light';
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    
-    html.setAttribute('data-theme', newTheme);
-    toggle.textContent = newTheme === 'light' ? '🌙' : '☀️';
-    
-    // Save to server
-    fetch('api/update_theme.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({theme: newTheme})
-    });
-}
-
-// Notification dropdown
-function toggleNotifications() {
-    const dropdown = document.getElementById('notificationDropdown');
-    dropdown.classList.toggle('show');
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(e) {
-    const dropdown = document.getElementById('notificationDropdown');
-    const btn = document.querySelector('.notification-btn');
-    if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
-        dropdown.classList.remove('show');
-    }
-});
-
-function markAsRead(notifId) {
-    fetch('api/mark_notification_read.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({notification_id: notifId})
-    }).then(() => location.reload());
-}
-
-function markAllRead() {
-    fetch('api/mark_all_notifications_read.php', {
-        method: 'POST'
-    }).then(() => location.reload());
-}
-
-// Auto-refresh notifications every 30 seconds
-setInterval(function() {
-    fetch('api/get_unread_count.php')
-        .then(r => r.json())
-        .then(data => {
-            const badge = document.querySelector('.notification-badge');
-            if (data.count > 0) {
-                if (badge) {
-                    badge.textContent = data.count;
-                } else {
-                    const newBadge = document.createElement('span');
-                    newBadge.className = 'notification-badge';
-                    newBadge.textContent = data.count;
-                    document.querySelector('.notification-btn').appendChild(newBadge);
-                }
-            } else if (badge) {
-                badge.remove();
-            }
-        });
-}, 30000);
-</script>
-<!-- Theme Switcher -->
+<!-- Load theme.js and notifications.js -->
 <script src="../assets/js/theme.js"></script>
-
-<!-- Notifications (only on authenticated pages) -->
 <script src="../assets/js/notifications.js"></script>
 </body>
 </html>

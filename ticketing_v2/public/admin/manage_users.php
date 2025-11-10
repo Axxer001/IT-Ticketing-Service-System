@@ -54,10 +54,10 @@ $users = $stmt->fetchAll();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manage Users - Nexon</title>
-<!-- Theme CSS -->
-<link rel="stylesheet" href="../assets/css/theme.css">
-<!-- OR adjust path based on file location -->
 <link rel="stylesheet" href="../../assets/css/theme.css">
+<script>
+    const PHP_SESSION_THEME = <?= json_encode($_SESSION['theme'] ?? 'light') ?>;
+</script>
 <style>
 :root {
     --primary: #667eea;
@@ -267,10 +267,7 @@ td {
         </table>
     </div>
 </div>
-<!-- Theme Switcher -->
-<script src="../assets/js/theme.js"></script>
-
-<!-- Notifications (only on authenticated pages) -->
-<script src="../assets/js/notifications.js"></script>
+<script src="../../assets/js/theme.js"></script>
+<script src="../../assets/js/notifications.js"></script>
 </body>
 </html>

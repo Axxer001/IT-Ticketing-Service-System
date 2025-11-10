@@ -1,6 +1,7 @@
 /**
  * Nexon IT Ticketing System - Theme Switcher
  * Handles light/dark theme switching with persistence
+ * FIXED VERSION
  */
 
 (function() {
@@ -116,18 +117,20 @@
         }
 
         /**
-         * Get API path based on current location
+         * Get API path based on current location - FIXED
          */
         getApiPath() {
             const path = window.location.pathname;
             
             // Determine relative path to api folder
-            if (path.includes('/public/')) {
-                return '../api/update_theme.php';
-            } else if (path.includes('/admin/') || path.includes('/tickets/') || path.includes('/provider/')) {
+            if (path.includes('/admin/') || path.includes('/tickets/') || 
+                path.includes('/provider/') || path.includes('/reports/')) {
                 return '../../api/update_theme.php';
+            } else if (path.includes('/public/')) {
+                return '../api/update_theme.php';
             } else {
-                return 'api/update_theme.php';
+                // For root level pages in public directory
+                return '../api/update_theme.php';
             }
         }
 
@@ -279,21 +282,3 @@
     };
 
 })();
-
-/**
- * Example usage:
- * 
- * 1. HTML Button:
- *    <button id="themeToggle">🌙</button>
- *    <button data-theme-toggle>Toggle Theme</button>
- * 
- * 2. JavaScript:
- *    toggleTheme();              // Toggle between light/dark
- *    setTheme('dark');           // Set specific theme
- *    const theme = getTheme();   // Get current theme
- * 
- * 3. Listen for theme changes:
- *    window.addEventListener('themechange', (e) => {
- *        console.log('Theme changed to:', e.detail.theme);
- *    });
- */

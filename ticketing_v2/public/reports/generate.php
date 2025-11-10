@@ -25,10 +25,10 @@ $departmentPerformance = $analyticsObj->getDepartmentPerformance();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ticket Report - <?= date('M d, Y', strtotime($dateFrom)) ?> to <?= date('M d, Y', strtotime($dateTo)) ?></title>
-<!-- Theme CSS -->
-<link rel="stylesheet" href="../assets/css/theme.css">
-<!-- OR adjust path based on file location -->
 <link rel="stylesheet" href="../../assets/css/theme.css">
+<script>
+    const PHP_SESSION_THEME = <?= json_encode($_SESSION['theme'] ?? 'light') ?>;
+</script>
 <style>
 @media print {
     .no-print { display: none; }
@@ -365,10 +365,7 @@ tr:hover {
     <p><strong>Nexon IT Ticketing System</strong> | Confidential Report</p>
     <p>This document contains proprietary information and is for internal use only.</p>
 </div>
-<!-- Theme Switcher -->
-<script src="../assets/js/theme.js"></script>
-
-<!-- Notifications (only on authenticated pages) -->
-<script src="../assets/js/notifications.js"></script>
+<script src="../../assets/js/theme.js"></script>
+<script src="../../assets/js/notifications.js"></script>
 </body>
 </html>
