@@ -398,6 +398,7 @@ tbody tr:hover {
     .stats-grid {
         grid-template-columns: 1fr;
     }
+
     
     .page-title {
         font-size: 24px;
@@ -483,6 +484,10 @@ tbody tr:hover {
     <div class="navbar-brand">NEXON</div>
     
     <div class="navbar-actions">
+            <!-- Add Printables Link -->
+<a href="printables/index.php" style="padding: 8px 16px; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; text-decoration: none; color: var(--text-primary); font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+    📊 Reports
+</a>
         <button class="theme-toggle" id="themeToggle" data-theme-toggle>
             <?= ($_SESSION['theme'] ?? 'light') === 'light' ? '🌙' : '☀️' ?>
         </button>
