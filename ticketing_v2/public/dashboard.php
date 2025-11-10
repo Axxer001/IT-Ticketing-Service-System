@@ -483,42 +483,46 @@ tbody tr:hover {
 <nav class="navbar">
     <div class="navbar-brand">NEXON</div>
     
-    <div class="navbar-actions">
-            <!-- Add Printables Link -->
-<a href="printables/index.php" style="padding: 8px 16px; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; text-decoration: none; color: var(--text-primary); font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-    📊 Reports
-</a>
-        <button class="theme-toggle" id="themeToggle" data-theme-toggle>
-            <?= ($_SESSION['theme'] ?? 'light') === 'light' ? '🌙' : '☀️' ?>
-        </button>
-        
-        <button class="notification-btn">
-            🔔
-            <?php if ($unreadCount > 0): ?>
-                <span class="notification-badge" style="display:block"><?= $unreadCount ?></span>
-            <?php endif; ?>
-        </button>
-        
-        <div class="user-menu" onclick="location.href='logout.php'">
-            <div class="user-avatar">
-                <?= strtoupper(substr($profile['email'], 0, 2)) ?>
+   <!-- REPLACE the navbar-actions section in dashboard.php with this: -->
+
+<div class="navbar-actions">
+    <button class="theme-toggle" id="themeToggle" data-theme-toggle>
+        <?= ($_SESSION['theme'] ?? 'light') === 'light' ? '🌙' : '☀️' ?>
+    </button>
+    
+    <button class="notification-btn">
+        🔔
+        <?php if ($unreadCount > 0): ?>
+            <span class="notification-badge" style="display:block"><?= $unreadCount ?></span>
+        <?php endif; ?>
+    </button>
+    
+    <!-- NEW REPORTS LINK -->
+    <a href="printables/index.php" class="notification-btn" style="text-decoration:none; border:2px solid var(--border-color); width:auto; padding:0 12px;" title="Reports & Printables">
+        📊
+    </a>
+    <!-- END NEW LINK -->
+    
+    <div class="user-menu" onclick="location.href='logout.php'">
+        <div class="user-avatar">
+            <?= strtoupper(substr($profile['email'], 0, 2)) ?>
+        </div>
+        <div class="user-info">
+            <div class="user-name">
+                <?php
+                if ($userType === 'employee') {
+                    echo htmlspecialchars($profile['profile']['first_name'] . ' ' . $profile['profile']['last_name']);
+                } elseif ($userType === 'service_provider') {
+                    echo htmlspecialchars($profile['profile']['provider_name']);
+                } else {
+                    echo 'Admin';
+                }
+                ?>
             </div>
-            <div class="user-info">
-                <div class="user-name">
-                    <?php
-                    if ($userType === 'employee') {
-                        echo htmlspecialchars($profile['profile']['first_name'] . ' ' . $profile['profile']['last_name']);
-                    } elseif ($userType === 'service_provider') {
-                        echo htmlspecialchars($profile['profile']['provider_name']);
-                    } else {
-                        echo 'Admin';
-                    }
-                    ?>
-                </div>
-                <div class="user-role"><?= htmlspecialchars($userType) ?></div>
-            </div>
+            <div class="user-role"><?= htmlspecialchars($userType) ?></div>
         </div>
     </div>
+</div>
 </nav>
 
 <div class="container">

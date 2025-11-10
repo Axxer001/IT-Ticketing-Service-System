@@ -217,11 +217,10 @@ tr:hover {
 
 <nav class="navbar">
     <div class="navbar-brand">NEXON</div>
-    <div class="navbar-actions" style="display:flex; gap:12px">
-    <a href="../printables/index.php" class="back-btn">📊 Reports</a>
-    <a href="../dashboard.php" class="back-btn">← Dashboard</a>
-</div>
-    <a href="../dashboard.php" class="back-btn">← Dashboard</a>
+    <div style="display:flex; gap:12px;">
+        <a href="../printables/index.php" class="back-btn">📊 Reports</a>
+        <a href="../dashboard.php" class="back-btn">← Dashboard</a>
+    </div>
 </nav>
 
 <div class="container">

@@ -379,11 +379,11 @@ tbody tr:hover {
 
 <nav class="navbar">
     <div class="navbar-brand">NEXON ADMIN</div>
-    <div class="navbar-actions">
-        <a href="../printables/index.php" class="btn-analytics" style="margin-right:12px">📊 Printables</a>
-        <a href="analytics.php" class="btn-analytics">📊 Analytics</a>
-        <a href="../dashboard.php" class="back-btn">← Dashboard</a>
-    </div>
+<div class="navbar-actions">
+    <a href="../printables/index.php" class="btn-analytics">📊 Reports</a>
+    <a href="analytics.php" class="btn-analytics">📊 Analytics</a>
+    <a href="../dashboard.php" class="back-btn">← Dashboard</a>
+</div>
 </nav>
 
 <div class="container">
