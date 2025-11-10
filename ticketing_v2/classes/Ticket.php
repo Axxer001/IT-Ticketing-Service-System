@@ -5,11 +5,17 @@ require_once "Notification.php";
 
 /**
  * Enhanced Ticket Management Class
+ * FIXED VERSION with proper validation and security
  */
 class Ticket {
     private $db;
     private $audit;
     private $notification;
+    
+    // Allowed file types
+    private $allowedFileTypes = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'];
+    private $maxFileSize = 10485760; // 10MB
+    private $maxFiles = 5;
     
     public function __construct() {
         $this->db = new Database();
@@ -28,10 +34,70 @@ class Ticket {
     }
     
     /**
+     * Validate file upload
+     */
+    private function validateFile($file) {
+        $errors = [];
+        
+        // Check file size
+        if ($file['size'] > $this->maxFileSize) {
+            $errors[] = "File {$file['name']} exceeds maximum size of 10MB";
+        }
+        
+        // Check file extension
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($extension, $this->allowedFileTypes)) {
+            $errors[] = "File type .{$extension} is not allowed";
+        }
+        
+        // Check MIME type
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        
+        $allowedMimes = [
+            'image/jpeg',
+            'image/png',
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        
+        if (!in_array($mimeType, $allowedMimes)) {
+            $errors[] = "Invalid file type for {$file['name']}";
+        }
+        
+        return $errors;
+    }
+    
+    /**
      * Create new ticket
      */
     public function create($employeeId, $data, $attachments = []) {
         try {
+            // Validate input
+            if (empty($data['device_type_id']) || empty($data['device_name']) || empty($data['issue_description'])) {
+                throw new Exception("Required fields are missing");
+            }
+            
+            // Validate priority
+            $validPriorities = ['low', 'medium', 'high', 'critical'];
+            if (!in_array($data['priority'] ?? 'medium', $validPriorities)) {
+                $data['priority'] = 'medium';
+            }
+            
+            // Validate attachments
+            if (count($attachments) > $this->maxFiles) {
+                throw new Exception("Maximum {$this->maxFiles} files allowed");
+            }
+            
+            foreach ($attachments as $file) {
+                $validationErrors = $this->validateFile($file);
+                if (!empty($validationErrors)) {
+                    throw new Exception(implode(', ', $validationErrors));
+                }
+            }
+            
             $this->db->beginTransaction();
             
             $ticketNumber = $this->generateTicketNumber();
@@ -41,6 +107,10 @@ class Ticket {
             $deptStmt = $this->db->connect()->prepare($deptSql);
             $deptStmt->execute([$employeeId]);
             $employee = $deptStmt->fetch();
+            
+            if (!$employee) {
+                throw new Exception("Employee not found");
+            }
             
             // Insert ticket
             $sql = "INSERT INTO tickets 
@@ -54,9 +124,9 @@ class Ticket {
                 $employeeId,
                 $employee['department_id'],
                 $data['device_type_id'],
-                $data['device_name'],
-                $data['issue_description'],
-                $data['priority'] ?? 'medium'
+                htmlspecialchars($data['device_name'], ENT_QUOTES, 'UTF-8'),
+                htmlspecialchars($data['issue_description'], ENT_QUOTES, 'UTF-8'),
+                $data['priority']
             ]);
             
             $ticketId = $this->db->lastInsertId();
@@ -66,14 +136,21 @@ class Ticket {
                 $this->saveAttachments($ticketId, $attachments);
             }
             
+            // Get user_id for logging
+            $userIdSql = "SELECT user_id FROM employees WHERE id = ?";
+            $userIdStmt = $this->db->connect()->prepare($userIdSql);
+            $userIdStmt->execute([$employeeId]);
+            $userIdResult = $userIdStmt->fetch();
+            $userId = $userIdResult['user_id'];
+            
             // Log initial creation
-            $this->logTicketUpdate($ticketId, $employeeId, 'comment', 'Ticket created');
+            $this->logTicketUpdate($ticketId, $userId, 'comment', 'Ticket created');
             
             // Notify admins
             $this->notification->notifyAdminNewTicket($ticketId, $ticketNumber);
             
             // Audit log
-            $this->audit->log($employeeId, 'ticket_created', 'tickets', $ticketId, 
+            $this->audit->log($userId, 'ticket_created', 'tickets', $ticketId, 
                 null, json_encode($data));
             
             $this->db->commit();
@@ -173,8 +250,8 @@ class Ticket {
         }
         
         $sql .= " ORDER BY t.created_at DESC LIMIT ? OFFSET ?";
-        $params[] = $limit;
-        $params[] = $offset;
+        $params[] = (int)$limit;
+        $params[] = (int)$offset;
         
         $stmt = $this->db->connect()->prepare($sql);
         $stmt->execute($params);
@@ -237,6 +314,12 @@ class Ticket {
      */
     public function updateStatus($ticketId, $status, $userId, $comment = null) {
         try {
+            // Validate status
+            $validStatuses = ['assigned', 'in_progress', 'resolved', 'closed'];
+            if (!in_array($status, $validStatuses)) {
+                throw new Exception("Invalid status");
+            }
+            
             $this->db->beginTransaction();
             
             $ticket = $this->getById($ticketId);
@@ -259,6 +342,7 @@ class Ticket {
             
             // Log the status change
             $message = $comment ?? "Status changed from {$oldStatus} to {$status}";
+            $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
             $this->logTicketUpdate($ticketId, $userId, 'status_change', $message, $oldStatus, $status);
             
             // Notify employee
@@ -285,6 +369,7 @@ class Ticket {
      * Add comment to ticket
      */
     public function addComment($ticketId, $userId, $comment) {
+        $comment = htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');
         return $this->logTicketUpdate($ticketId, $userId, 'comment', $comment);
     }
     
@@ -320,7 +405,7 @@ class Ticket {
      * Save ticket attachments
      */
     private function saveAttachments($ticketId, $files) {
-        $uploadDir = "../uploads/tickets/";
+        $uploadDir = __DIR__ . "/../uploads/tickets/";
         
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0755, true);
@@ -328,7 +413,9 @@ class Ticket {
         
         foreach ($files as $file) {
             if ($file['error'] === UPLOAD_ERR_OK) {
-                $fileName = uniqid() . '_' . basename($file['name']);
+                // Generate secure filename
+                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $fileName = uniqid() . '_' . time() . '.' . $extension;
                 $filePath = $uploadDir . $fileName;
                 
                 if (move_uploaded_file($file['tmp_name'], $filePath)) {
@@ -339,8 +426,8 @@ class Ticket {
                     $stmt = $this->db->connect()->prepare($sql);
                     $stmt->execute([
                         $ticketId,
-                        $file['name'],
-                        $filePath,
+                        htmlspecialchars($file['name'], ENT_QUOTES, 'UTF-8'),
+                        'uploads/tickets/' . $fileName,
                         $file['type'],
                         $file['size']
                     ]);
@@ -364,13 +451,24 @@ class Ticket {
      */
     public function submitRating($ticketId, $employeeId, $providerId, $rating, $feedback = null) {
         try {
+            // Validate rating
+            if (!is_numeric($rating) || $rating < 1 || $rating > 5) {
+                throw new Exception("Invalid rating value");
+            }
+            
             $this->db->beginTransaction();
             
             // Insert rating
             $sql = "INSERT INTO ticket_ratings (ticket_id, provider_id, employee_id, rating, feedback) 
                     VALUES (?, ?, ?, ?, ?)";
             $stmt = $this->db->connect()->prepare($sql);
-            $stmt->execute([$ticketId, $providerId, $employeeId, $rating, $feedback]);
+            $stmt->execute([
+                $ticketId, 
+                $providerId, 
+                $employeeId, 
+                $rating, 
+                $feedback ? htmlspecialchars($feedback, ENT_QUOTES, 'UTF-8') : null
+            ]);
             
             // Update provider's average rating
             $this->updateProviderRating($providerId);

@@ -1,6 +1,7 @@
 /**
  * Nexon IT Ticketing System - Real-time Notifications
  * Handles notification polling, display, and interactions
+ * FIXED VERSION
  */
 
 (function() {
@@ -56,11 +57,21 @@
         getApiBasePath() {
             const path = window.location.pathname;
             
-            if (path.includes('/admin/') || path.includes('/tickets/') || 
-                path.includes('/provider/') || path.includes('/reports/')) {
+            // Check if we're in a subdirectory
+            if (path.includes('/admin/')) {
                 return '../../api';
+            } else if (path.includes('/tickets/')) {
+                return '../../api';
+            } else if (path.includes('/provider/')) {
+                return '../../api';
+            } else if (path.includes('/reports/')) {
+                return '../../api';
+            } else if (path.includes('/public/')) {
+                return '../api';
+            } else {
+                // Root level (dashboard.php)
+                return '../api';
             }
-            return '../api';
         }
 
         /**
@@ -94,7 +105,13 @@
             button.innerHTML = '🔔';
             button.setAttribute('aria-label', 'Notifications');
             
-            navbarActions.insertBefore(button, navbarActions.children[1]);
+            // Insert before theme toggle or at the beginning
+            const themeToggle = navbarActions.querySelector('.theme-toggle');
+            if (themeToggle) {
+                navbarActions.insertBefore(button, themeToggle);
+            } else {
+                navbarActions.insertBefore(button, navbarActions.firstChild);
+            }
         }
 
         /**
@@ -107,7 +124,7 @@
             dropdown.innerHTML = `
                 <div class="notification-header">
                     <strong>Notifications</strong>
-                    <a href="#" onclick="NotificationManager.markAllRead(); return false;" 
+                    <a href="#" onclick="window.NotificationManager?.markAllRead(); return false;" 
                        style="font-size:12px; color:var(--primary)" 
                        class="mark-all-read" style="display:none">Mark all read</a>
                 </div>
@@ -132,7 +149,9 @@
             // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
                 if (this.isDropdownOpen && 
+                    this.notificationDropdown &&
                     !this.notificationDropdown.contains(e.target) && 
+                    this.notificationBtn &&
                     !this.notificationBtn.contains(e.target)) {
                     this.closeDropdown();
                 }
@@ -200,7 +219,9 @@
                 if (!this.badgeElement) {
                     this.badgeElement = document.createElement('span');
                     this.badgeElement.className = 'notification-badge';
-                    this.notificationBtn.appendChild(this.badgeElement);
+                    if (this.notificationBtn) {
+                        this.notificationBtn.appendChild(this.badgeElement);
+                    }
                 }
                 this.badgeElement.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
                 this.badgeElement.style.display = 'block';
@@ -211,9 +232,11 @@
             }
 
             // Update mark all read button visibility
-            const markAllBtn = this.notificationDropdown.querySelector('.mark-all-read');
-            if (markAllBtn) {
-                markAllBtn.style.display = this.unreadCount > 0 ? 'inline' : 'none';
+            if (this.notificationDropdown) {
+                const markAllBtn = this.notificationDropdown.querySelector('.mark-all-read');
+                if (markAllBtn) {
+                    markAllBtn.style.display = this.unreadCount > 0 ? 'inline' : 'none';
+                }
             }
         }
 
@@ -221,6 +244,8 @@
          * Render notifications in dropdown
          */
         renderNotifications() {
+            if (!this.notificationDropdown) return;
+            
             const notificationList = this.notificationDropdown.querySelector('.notification-list');
             if (!notificationList) return;
 
@@ -237,7 +262,7 @@
             notificationList.innerHTML = this.notifications.map(notif => `
                 <div class="notification-item ${!notif.is_read ? 'unread' : ''}" 
                      data-id="${notif.id}"
-                     onclick="NotificationManager.handleNotificationClick(${notif.id}, ${notif.ticket_id || 'null'})">
+                     onclick="window.NotificationManager?.handleNotificationClick(${notif.id}, ${notif.ticket_id || 'null'})">
                     <div class="notification-title">${this.escapeHtml(notif.title)}</div>
                     <div class="notification-message">${this.escapeHtml(notif.message)}</div>
                     <div class="notification-time">${this.formatTime(notif.created_at)}</div>
@@ -264,20 +289,26 @@
         getTicketUrl(ticketId) {
             const path = window.location.pathname;
             
-            if (path.includes('/admin/') || path.includes('/provider/') || path.includes('/reports/')) {
-                return `../tickets/view.php?id=${ticketId}`;
+            if (path.includes('/admin/')) {
+                return '../tickets/view.php?id=' + ticketId;
+            } else if (path.includes('/provider/')) {
+                return '../tickets/view.php?id=' + ticketId;
+            } else if (path.includes('/reports/')) {
+                return '../tickets/view.php?id=' + ticketId;
             } else if (path.includes('/tickets/')) {
-                return `view.php?id=${ticketId}`;
+                return 'view.php?id=' + ticketId;
+            } else {
+                // From dashboard
+                return 'tickets/view.php?id=' + ticketId;
             }
-            return `tickets/view.php?id=${ticketId}`;
         }
 
         /**
-         * Mark notification as read
+         * Mark notification as read - FIXED ENDPOINT NAME
          */
         async markAsRead(notificationId) {
             try {
-                const response = await fetch(`${this.options.apiBasePath}/mark_notification_read.php`, {
+                const response = await fetch(`${this.options.apiBasePath}/mark_notifications_read.php`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ notification_id: notificationId })
@@ -335,17 +366,21 @@
          * Open dropdown
          */
         openDropdown() {
-            this.notificationDropdown.classList.add('show');
-            this.isDropdownOpen = true;
-            this.loadNotifications(); // Refresh when opened
+            if (this.notificationDropdown) {
+                this.notificationDropdown.classList.add('show');
+                this.isDropdownOpen = true;
+                this.loadNotifications(); // Refresh when opened
+            }
         }
 
         /**
          * Close dropdown
          */
         closeDropdown() {
-            this.notificationDropdown.classList.remove('show');
-            this.isDropdownOpen = false;
+            if (this.notificationDropdown) {
+                this.notificationDropdown.classList.remove('show');
+                this.isDropdownOpen = false;
+            }
         }
 
         /**
@@ -480,21 +515,3 @@
     };
 
 })();
-
-/**
- * Example usage:
- * 
- * 1. Include in HTML:
- *    <script src="/assets/js/notifications.js"></script>
- * 
- * 2. Custom configuration:
- *    new NotificationManager({
- *        pollInterval: 20000,              // Poll every 20 seconds
- *        showBrowserNotifications: true,   // Enable browser notifications
- *        soundEnabled: true                // Enable notification sound
- *    });
- * 
- * 3. Manual control:
- *    NotificationManager.loadNotifications();  // Refresh notifications
- *    NotificationManager.markAllRead();        // Mark all as read
- */
