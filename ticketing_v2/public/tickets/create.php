@@ -27,14 +27,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Handle file uploads
         $attachments = [];
-        if (isset($_FILES['attachments'])) {
+        if (isset($_FILES['attachments']) && is_array($_FILES['attachments']['tmp_name'])) {
             foreach ($_FILES['attachments']['tmp_name'] as $key => $tmp_name) {
-                if ($_FILES['attachments']['error'][$key] === UPLOAD_ERR_OK) {
+                if (!empty($tmp_name) && $_FILES['attachments']['error'][$key] === UPLOAD_ERR_OK) {
                     $attachments[] = [
                         'name' => $_FILES['attachments']['name'][$key],
                         'type' => $_FILES['attachments']['type'][$key],
                         'tmp_name' => $tmp_name,
-                        'size' => $_FILES['attachments']['size'][$key]
+                        'size' => $_FILES['attachments']['size'][$key],
+                        'error' => $_FILES['attachments']['error'][$key]
                     ];
                 }
             }
@@ -218,10 +219,6 @@ textarea {
     background: rgba(102, 126, 234, 0.05);
 }
 
-.file-upload-area input {
-    display: none;
-}
-
 .upload-icon {
     font-size: 48px;
     margin-bottom: 8px;
@@ -248,14 +245,6 @@ textarea {
     font-size: 13px;
 }
 
-.file-item button {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 4px 8px;
-}
-
 .btn {
     padding: 14px 24px;
     border-radius: 10px;
@@ -264,6 +253,7 @@ textarea {
     cursor: pointer;
     font-size: 16px;
     transition: all 0.3s;
+    position: relative;
 }
 
 .btn-primary {
@@ -272,9 +262,34 @@ textarea {
     width: 100%;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-loading {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 @media (max-width: 600px) {
@@ -341,64 +356,47 @@ textarea {
                     <div class="upload-icon">📎</div>
                     <div class="upload-text">Click to upload images or documents</div>
                     <div class="upload-text" style="font-size:12px; margin-top:4px">Max 5 files, 10MB each</div>
-                    <input type="file" id="fileInput" name="attachments[]" multiple accept="image/*,.pdf,.doc,.docx">
+                    <input type="file" id="fileInput" name="attachments[]" multiple accept="image/*,.pdf,.doc,.docx" style="display:none">
                 </div>
                 <div class="file-list" id="fileList"></div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Submit Ticket</button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                <span class="btn-text">Submit Ticket</span>
+            </button>
         </form>
     </div>
 </div>
 
 <script>
+// File handling
 const fileInput = document.getElementById('fileInput');
 const fileList = document.getElementById('fileList');
-let selectedFiles = [];
 
 fileInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     
-    if (selectedFiles.length + files.length > 5) {
-        alert('Maximum 5 files allowed');
-        return;
-    }
-    
-    files.forEach(file => {
-        if (file.size > 10485760) {
-            alert(`File ${file.name} is too large. Maximum size is 10MB`);
-            return;
-        }
-        selectedFiles.push(file);
-    });
-    
-    displayFiles();
-});
-
-function displayFiles() {
     fileList.innerHTML = '';
-    selectedFiles.forEach((file, index) => {
+    files.forEach((file, index) => {
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item';
         fileItem.innerHTML = `
             <span>📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)</span>
-            <button type="button" onclick="removeFile(${index})">✕</button>
         `;
         fileList.appendChild(fileItem);
     });
-}
+});
 
-function removeFile(index) {
-    selectedFiles.splice(index, 1);
-    displayFiles();
+// Form submission with loading state
+document.getElementById('ticketForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = submitBtn.querySelector('.btn-text');
     
-    // Update file input
-    const dt = new DataTransfer();
-    selectedFiles.forEach(file => dt.items.add(file));
-    fileInput.files = dt.files;
-}
+    // Disable button and show loading
+    submitBtn.disabled = true;
+    btnText.innerHTML = '<span class="btn-loading"><span class="spinner"></span> Creating ticket...</span>';
+});
 </script>
 <script src="../../assets/js/theme.js"></script>
-<script src="../../assets/js/notifications.js"></script>
 </body>
 </html>

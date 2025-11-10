@@ -1,8 +1,7 @@
 <?php
 /**
- * Enhanced Database Connection Class
- * Provides secure PDO connection with error handling
- * FIXED VERSION
+ * Optimized Database Connection Class
+ * FIXED: Persistent connections for faster queries
  */
 class Database {
     private $host = "localhost";
@@ -12,7 +11,7 @@ class Database {
     private $conn = null;
     
     /**
-     * Get database connection
+     * Get database connection with persistent connection
      * @return PDO
      */
     public function connect() {
@@ -23,14 +22,14 @@ class Database {
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES => false,
-                    PDO::ATTR_PERSISTENT => false,
-                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+                    PDO::ATTR_PERSISTENT => true, // OPTIMIZED: Use persistent connections
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+                    PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true, // OPTIMIZED: Buffer queries
                 ];
                 
                 $this->conn = new PDO($dsn, $this->username, $this->password, $options);
             } catch (PDOException $e) {
                 error_log("Database Connection Error: " . $e->getMessage());
-                // Don't die in production - throw exception instead
                 throw new Exception("Database connection failed. Please try again later.");
             }
         }

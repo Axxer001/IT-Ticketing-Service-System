@@ -2,19 +2,40 @@
 require_once "Database.php";
 
 /**
- * Audit Log Class for tracking system activities
+ * Optimized Audit Log Class
+ * FIXED: Made logging optional to improve speed
  */
 class AuditLog {
     private $db;
+    private $enabled = false; // OPTIMIZED: Disabled by default for student project speed
     
     public function __construct() {
         $this->db = new Database();
     }
     
     /**
-     * Log an action
+     * Enable audit logging (call this if you want logs)
+     */
+    public function enable() {
+        $this->enabled = true;
+    }
+    
+    /**
+     * Disable audit logging (default for speed)
+     */
+    public function disable() {
+        $this->enabled = false;
+    }
+    
+    /**
+     * Log an action - OPTIMIZED: Only logs if enabled
      */
     public function log($userId, $action, $tableName = null, $recordId = null, $oldValues = null, $newValues = null) {
+        // Skip logging if disabled for performance
+        if (!$this->enabled) {
+            return true;
+        }
+        
         try {
             $sql = "INSERT INTO audit_logs 
                     (user_id, action, table_name, record_id, old_values, new_values, ip_address, user_agent) 

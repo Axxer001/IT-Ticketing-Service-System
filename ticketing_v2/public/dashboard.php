@@ -5,7 +5,6 @@ require_once "../classes/Ticket.php";
 require_once "../classes/Notification.php";
 require_once "../classes/Analytics.php";
 
-// Check authentication
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
@@ -20,14 +19,10 @@ $userId = $_SESSION['user_id'];
 $userType = $_SESSION['user_type'];
 $profile = $userObj->getUserProfile($userId);
 
-// Get statistics
 $stats = $analyticsObj->getDashboardStats($userType, $userId);
-
-// Get notifications
 $notifications = $notificationObj->getUserNotifications($userId, false, 10);
 $unreadCount = $notificationObj->getUnreadCount($userId);
 
-// Get recent tickets based on user type
 $filters = [];
 if ($userType === 'employee') {
     $filters['employee_id'] = $profile['profile']['id'];
@@ -44,7 +39,6 @@ $recentTickets = $ticketObj->getTickets($filters, 5, 0);
 <title>Dashboard - Nexon Ticketing</title>
 <link rel="stylesheet" href="../assets/css/theme.css">
 <script>
-    // Pass PHP session theme to JavaScript
     const PHP_SESSION_THEME = <?= json_encode($_SESSION['theme'] ?? 'light') ?>;
 </script>
 <style>
@@ -85,7 +79,6 @@ body {
     transition: background 0.3s, color 0.3s;
 }
 
-/* Header/Navbar */
 .navbar {
     background: var(--bg-card);
     border-bottom: 1px solid var(--border-color);
@@ -146,6 +139,7 @@ body {
     border-radius: 10px;
     min-width: 18px;
     text-align: center;
+    display: none;
 }
 
 .user-menu {
@@ -191,7 +185,6 @@ body {
     text-transform: capitalize;
 }
 
-/* Main Container */
 .container {
     max-width: 1400px;
     margin: 0 auto;
@@ -214,7 +207,6 @@ body {
     font-size: 16px;
 }
 
-/* Stats Cards */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -271,7 +263,6 @@ body {
     margin-top: 8px;
 }
 
-/* Content Grid */
 .content-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -323,7 +314,6 @@ body {
     box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
 }
 
-/* Table */
 .table-responsive {
     overflow-x: auto;
 }
@@ -357,7 +347,10 @@ tr:last-child td {
     border-bottom: none;
 }
 
-/* Status Badge */
+tbody tr:hover {
+    background: var(--bg-main);
+}
+
 .badge {
     padding: 4px 12px;
     border-radius: 20px;
@@ -372,13 +365,11 @@ tr:last-child td {
 .badge-resolved { background: rgba(16, 185, 129, 0.15); color: #10b981; }
 .badge-closed { background: rgba(100, 116, 139, 0.15); color: #64748b; }
 
-/* Priority Badge */
 .badge-low { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 .badge-medium { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
 .badge-high { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 .badge-critical { background: rgba(220, 38, 38, 0.2); color: #dc2626; }
 
-/* Empty State */
 .empty-state {
     text-align: center;
     padding: 48px 24px;
@@ -391,7 +382,6 @@ tr:last-child td {
     opacity: 0.5;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .navbar {
         padding: 12px 16px;
@@ -427,7 +417,6 @@ tr:last-child td {
     }
 }
 
-/* Notification Dropdown */
 .notification-dropdown {
     position: absolute;
     top: 60px;
@@ -490,7 +479,6 @@ tr:last-child td {
 </head>
 <body>
 
-<!-- Navbar -->
 <nav class="navbar">
     <div class="navbar-brand">NEXON</div>
     
@@ -502,7 +490,7 @@ tr:last-child td {
         <button class="notification-btn">
             🔔
             <?php if ($unreadCount > 0): ?>
-                <span class="notification-badge"><?= $unreadCount ?></span>
+                <span class="notification-badge" style="display:block"><?= $unreadCount ?></span>
             <?php endif; ?>
         </button>
         
@@ -528,25 +516,12 @@ tr:last-child td {
     </div>
 </nav>
 
-<!-- Notification Dropdown (managed by notifications.js) -->
-<div class="notification-dropdown" id="notificationDropdown">
-    <div class="notification-header">
-        <strong>Notifications</strong>
-        <?php if ($unreadCount > 0): ?>
-            <a href="#" class="mark-all-read" style="font-size:12px; color:var(--primary)">Mark all read</a>
-        <?php endif; ?>
-    </div>
-    <div class="notification-list"></div>
-</div>
-
-<!-- Main Container -->
 <div class="container">
     <div class="page-header">
         <h1 class="page-title">Dashboard</h1>
         <p class="page-subtitle">Welcome back! Here's what's happening today.</p>
     </div>
 
-    <!-- Statistics Cards -->
     <div class="stats-grid">
         <?php if ($userType === 'admin'): ?>
             <div class="stat-card">
@@ -575,7 +550,7 @@ tr:last-child td {
                         <div class="stat-value"><?= $stats['active'] ?></div>
                         <div class="stat-label">Active Tickets</div>
                     </div>
-                    <div class="stat-icon info">🔄</div>
+                    <div class="stat-icon primary">🔄</div>
                 </div>
             </div>
             
@@ -616,7 +591,7 @@ tr:last-child td {
                         <div class="stat-value"><?= $stats['in_progress'] ?></div>
                         <div class="stat-label">In Progress</div>
                     </div>
-                    <div class="stat-icon info">🔄</div>
+                    <div class="stat-icon primary">🔄</div>
                 </div>
             </div>
             
@@ -665,7 +640,7 @@ tr:last-child td {
                 <div class="stat-header">
                     <div>
                         <div class="stat-value"><?= number_format($stats['avg_rating'], 1) ?>★</div>
-                        <div class="stat-label">Average Rating (<?= $stats['total_ratings'] ?> ratings)</div>
+                        <div class="stat-label">Rating (<?= $stats['total_ratings'] ?> reviews)</div>
                     </div>
                     <div class="stat-icon warning">⭐</div>
                 </div>
@@ -673,7 +648,6 @@ tr:last-child td {
         <?php endif; ?>
     </div>
 
-    <!-- Recent Tickets -->
     <div class="content-grid">
         <div class="card">
             <div class="card-header">
@@ -707,9 +681,6 @@ tr:last-child td {
                                 <th>Device</th>
                                 <th>Priority</th>
                                 <th>Status</th>
-                                <?php if ($userType === 'service_provider'): ?>
-                                    <th>Action</th>
-                                <?php endif; ?>
                             </tr>
                         </thead>
                         <tbody>
@@ -722,9 +693,6 @@ tr:last-child td {
                                     <td><?= htmlspecialchars($ticket['device_type_name']) ?></td>
                                     <td><span class="badge badge-<?= $ticket['priority'] ?>"><?= ucfirst($ticket['priority']) ?></span></td>
                                     <td><span class="badge badge-<?= str_replace('_', '-', $ticket['status']) ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span></td>
-                                    <?php if ($userType === 'service_provider'): ?>
-                                        <td><a href="provider/update_ticket.php?id=<?= $ticket['id'] ?>" class="btn btn-primary" style="font-size:12px; padding:6px 12px" onclick="event.stopPropagation()">Update</a></td>
-                                    <?php endif; ?>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -735,7 +703,6 @@ tr:last-child td {
     </div>
 </div>
 
-<!-- Load theme.js and notifications.js -->
 <script src="../assets/js/theme.js"></script>
 <script src="../assets/js/notifications.js"></script>
 </body>
