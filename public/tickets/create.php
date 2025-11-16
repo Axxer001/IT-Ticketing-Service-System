@@ -22,7 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'device_type_id' => $_POST['device_type_id'],
             'device_name' => $_POST['device_name'],
             'issue_description' => $_POST['issue_description'],
-            'priority' => $_POST['priority']
+            'priority' => $_POST['priority'],
+            'gmail_address' => $_POST['gmail_address'] // NEW
         ];
         
         // Handle file uploads
@@ -205,6 +206,28 @@ textarea {
     gap: 16px;
 }
 
+/* NEW: Email field highlight */
+.email-field {
+    position: relative;
+}
+
+.email-field input {
+    padding-left: 40px;
+}
+
+.email-icon {
+    position: absolute;
+    left: 12px;
+    top: 38px;
+    font-size: 20px;
+}
+
+.help-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+}
+
 .file-upload-area {
     border: 2px dashed var(--border-color);
     border-radius: 10px;
@@ -318,6 +341,20 @@ textarea {
         <?php endif; ?>
 
         <form method="POST" enctype="multipart/form-data" id="ticketForm">
+            <!-- NEW: Gmail Address Field -->
+            <div class="form-group email-field">
+                <label>📧 Your Gmail Address <span class="required">*</span></label>
+                <span class="email-icon">📧</span>
+                <input type="email" 
+                       name="gmail_address" 
+                       placeholder="your.email@gmail.com" 
+                       value="<?= htmlspecialchars($profile['email'] ?? '') ?>"
+                       required>
+                <div class="help-text">
+                    ✉️ Email notifications will be sent to this address for ticket updates
+                </div>
+            </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label>Device Type <span class="required">*</span></label>
