@@ -18,12 +18,13 @@ $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
+        // FIXED: Use bound_gmail from user profile instead of manual input
         $data = [
             'device_type_id' => $_POST['device_type_id'],
             'device_name' => $_POST['device_name'],
             'issue_description' => $_POST['issue_description'],
             'priority' => $_POST['priority'],
-            'gmail_address' => $_POST['gmail_address'] // NEW
+            'gmail_address' => $profile['bound_gmail'] ?? $profile['email'] // Use bound Gmail
         ];
         
         // Handle file uploads
@@ -195,6 +196,13 @@ input:focus, select:focus, textarea:focus {
     border-color: var(--primary);
 }
 
+/* FIXED: Read-only field styling */
+input:read-only {
+    background: var(--bg-main);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
 textarea {
     min-height: 150px;
     resize: vertical;
@@ -204,22 +212,6 @@ textarea {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-}
-
-/* NEW: Email field highlight */
-.email-field {
-    position: relative;
-}
-
-.email-field input {
-    padding-left: 40px;
-}
-
-.email-icon {
-    position: absolute;
-    left: 12px;
-    top: 38px;
-    font-size: 20px;
 }
 
 .help-text {
@@ -276,7 +268,6 @@ textarea {
     cursor: pointer;
     font-size: 16px;
     transition: all 0.3s;
-    position: relative;
 }
 
 .btn-primary {
@@ -293,26 +284,6 @@ textarea {
 .btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-}
-
-.btn-loading {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
 }
 
 @media (max-width: 600px) {
@@ -341,17 +312,30 @@ textarea {
         <?php endif; ?>
 
         <form method="POST" enctype="multipart/form-data" id="ticketForm">
-            <!-- NEW: Gmail Address Field -->
-            <div class="form-group email-field">
-                <label>📧 Your Gmail Address <span class="required">*</span></label>
-                <span class="email-icon">📧</span>
-                <input type="email" 
-                       name="gmail_address" 
-                       placeholder="your.email@gmail.com" 
-                       value="<?= htmlspecialchars($profile['email'] ?? '') ?>"
-                       required>
+            <!-- FIXED: Display bound Gmail (read-only) -->
+            <div class="form-group">
+                <label>📧 Notification Email</label>
+                <input type="text" 
+                       value="<?= htmlspecialchars($profile['bound_gmail'] ?? $profile['email']) ?>"
+                       readonly>
                 <div class="help-text">
-                    ✉️ Email notifications will be sent to this address for ticket updates
+                    ✉️ Email notifications will be sent to this address. Update in Account Settings.
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" 
+                           value="<?= htmlspecialchars($profile['profile']['first_name'] . ' ' . $profile['profile']['last_name']) ?>"
+                           readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" 
+                           value="<?= htmlspecialchars($profile['profile']['department_name']) ?>"
+                           readonly>
                 </div>
             </div>
 
@@ -399,7 +383,7 @@ textarea {
             </div>
 
             <button type="submit" class="btn btn-primary" id="submitBtn">
-                <span class="btn-text">Submit Ticket</span>
+                Submit Ticket
             </button>
         </form>
     </div>
@@ -427,11 +411,8 @@ fileInput.addEventListener('change', function(e) {
 // Form submission with loading state
 document.getElementById('ticketForm').addEventListener('submit', function(e) {
     const submitBtn = document.getElementById('submitBtn');
-    const btnText = submitBtn.querySelector('.btn-text');
-    
-    // Disable button and show loading
     submitBtn.disabled = true;
-    btnText.innerHTML = '<span class="btn-loading"><span class="spinner"></span> Creating ticket...</span>';
+    submitBtn.textContent = 'Creating ticket...';
 });
 </script>
 <script src="../../assets/js/theme.js"></script>

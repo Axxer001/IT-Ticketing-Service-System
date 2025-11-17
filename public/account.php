@@ -40,6 +40,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// FIXED: Job position options (matching registration)
+$jobPositions = [
+    'Software Engineer',
+    'Senior Software Engineer',
+    'Lead Developer',
+    'Project Manager',
+    'Product Manager',
+    'Business Analyst',
+    'Quality Assurance Engineer',
+    'DevOps Engineer',
+    'System Administrator',
+    'Network Administrator',
+    'Database Administrator',
+    'UI/UX Designer',
+    'Graphic Designer',
+    'HR Manager',
+    'HR Specialist',
+    'Recruiter',
+    'Accountant',
+    'Finance Manager',
+    'Marketing Manager',
+    'Marketing Specialist',
+    'Sales Manager',
+    'Sales Representative',
+    'Customer Support Specialist',
+    'Technical Support Engineer',
+    'IT Support Specialist',
+    'Game Designer',
+    'Level Designer',
+    'Game Developer',
+    'Artist',
+    'Animator',
+    'Sound Designer',
+    'Music Composer',
+    'QA Tester',
+    'Localization Specialist',
+    'Producer',
+    'Executive',
+    'Department Head',
+    'Team Lead',
+    'Coordinator',
+    'Assistant',
+    'Intern',
+    'Consultant',
+    'Contractor',
+    'Other'
+];
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
@@ -179,7 +227,7 @@ label {
     font-size: 14px;
 }
 
-input {
+input, select {
     width: 100%;
     padding: 12px;
     border: 2px solid var(--border-color);
@@ -190,7 +238,7 @@ input {
     color: var(--text-primary);
 }
 
-input:focus {
+input:focus, select:focus {
     outline: none;
     border-color: var(--primary);
 }
@@ -496,17 +544,22 @@ input:focus {
         </div>
     </div>
 
-    <!-- Job Position (Employee Only) -->
+    <!-- FIXED: Job Position (Employee Only) with Dropdown -->
     <?php if ($_SESSION['user_type'] === 'employee'): ?>
     <div class="card" style="margin-bottom: 24px;">
         <h2 class="card-title">💼 Job Position</h2>
         <form method="POST">
             <div class="form-group">
                 <label>Current Position</label>
-                <input type="text" 
-                       name="job_position" 
-                       placeholder="e.g., Software Engineer, HR Manager"
-                       value="<?= htmlspecialchars($profile['job_position'] ?? '') ?>">
+                <select name="job_position" required>
+                    <option value="">-- Select Position --</option>
+                    <?php foreach ($jobPositions as $position): ?>
+                        <option value="<?= htmlspecialchars($position) ?>" 
+                                <?= ($profile['job_position'] ?? '') === $position ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($position) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
                 <div class="help-text">
                     Your role or position in the company
                 </div>

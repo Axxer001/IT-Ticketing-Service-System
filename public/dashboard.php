@@ -80,105 +80,7 @@ body {
     transition: background 0.3s, color 0.3s;
 }
 
-/* Sidebar */
-.sidebar {
-    position: fixed;
-    left: 0;
-    top: 64px;
-    width: var(--sidebar-width);
-    height: calc(100vh - 64px);
-    background: var(--bg-card);
-    border-right: 1px solid var(--border-color);
-    overflow-y: auto;
-    transition: transform 0.3s ease;
-    z-index: 90;
-}
-
-.sidebar.collapsed {
-    transform: translateX(calc(-1 * var(--sidebar-width)));
-}
-
-.sidebar-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.sidebar-toggle {
-    position: fixed;
-    left: 10px;
-    top: 74px;
-    width: 40px;
-    height: 40px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 95;
-    transition: left 0.3s ease;
-    font-size: 20px;
-}
-
-.sidebar.collapsed + .sidebar-toggle {
-    left: 10px;
-}
-
-.sidebar:not(.collapsed) + .sidebar-toggle {
-    left: calc(var(--sidebar-width) + 10px);
-}
-
-.sidebar-menu {
-    padding: 8px;
-}
-
-.menu-section {
-    margin-bottom: 24px;
-}
-
-.menu-section-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    font-weight: 700;
-    padding: 8px 12px;
-    letter-spacing: 0.5px;
-}
-
-.menu-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 8px;
-    text-decoration: none;
-    color: var(--text-primary);
-    transition: all 0.2s;
-    margin-bottom: 4px;
-}
-
-.menu-item:hover {
-    background: var(--bg-main);
-}
-
-.menu-item.active {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: white;
-}
-
-.menu-icon {
-    font-size: 20px;
-    width: 24px;
-    text-align: center;
-}
-
-.menu-text {
-    font-weight: 600;
-    font-size: 14px;
-}
-
-/* Navbar */
+/* FIXED: Navbar with sidebar toggle next to logo */
 .navbar {
     background: var(--bg-card);
     border-bottom: 1px solid var(--border-color);
@@ -195,6 +97,32 @@ body {
     height: 64px;
 }
 
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* FIXED: Sidebar toggle button next to logo */
+.sidebar-toggle-btn {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    transition: all 0.3s;
+}
+
+.sidebar-toggle-btn:hover {
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
 .navbar-brand {
     font-size: 24px;
     font-weight: 800;
@@ -204,6 +132,7 @@ body {
     letter-spacing: 1px;
 }
 
+/* FIXED: Only Notifications and Account in navbar actions */
 .navbar-actions {
     display: flex;
     align-items: center;
@@ -288,6 +217,78 @@ body {
     font-size: 12px;
     color: var(--text-secondary);
     text-transform: capitalize;
+}
+
+/* FIXED: Sidebar with all feature buttons */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 64px;
+    width: var(--sidebar-width);
+    height: calc(100vh - 64px);
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 90;
+}
+
+.sidebar.collapsed {
+    transform: translateX(calc(-1 * var(--sidebar-width)));
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-menu {
+    padding: 8px;
+}
+
+.menu-section {
+    margin-bottom: 24px;
+}
+
+.menu-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 700;
+    padding: 8px 12px;
+    letter-spacing: 0.5px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.2s;
+    margin-bottom: 4px;
+}
+
+.menu-item:hover {
+    background: var(--bg-main);
+}
+
+.menu-item.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+}
+
+.menu-icon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+}
+
+.menu-text {
+    font-weight: 600;
+    font-size: 14px;
 }
 
 /* Main Content */
@@ -397,28 +398,6 @@ body {
     color: var(--text-primary);
 }
 
-.btn {
-    padding: 10px 20px;
-    border-radius: 10px;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 14px;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: white;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
-}
-
 table {
     width: 100%;
     border-collapse: collapse;
@@ -488,7 +467,7 @@ tbody tr:hover {
         transform: translateX(calc(-1 * var(--sidebar-width)));
     }
     
-    .sidebar.collapsed {
+    .sidebar.show {
         transform: translateX(0);
     }
     
@@ -567,10 +546,14 @@ tbody tr:hover {
 </head>
 <body>
 
-<!-- Navbar -->
+<!-- FIXED: Navbar with sidebar toggle next to logo -->
 <nav class="navbar">
-    <div class="navbar-brand">NEXON</div>
+    <div class="navbar-left">
+        <button class="sidebar-toggle-btn" id="sidebarToggle">☰</button>
+        <div class="navbar-brand">NEXON</div>
+    </div>
     
+    <!-- FIXED: Only Notifications and Account remain in navbar -->
     <div class="navbar-actions">
         <button class="theme-toggle" id="themeToggle" data-theme-toggle>
             <?= ($_SESSION['theme'] ?? 'light') === 'light' ? '🌙' : '☀️' ?>
@@ -605,7 +588,7 @@ tbody tr:hover {
     </div>
 </nav>
 
-<!-- Sidebar -->
+<!-- FIXED: Sidebar with ALL feature buttons -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <div style="font-weight: 700; font-size: 16px;">Menu</div>
@@ -636,7 +619,7 @@ tbody tr:hover {
             <?php elseif ($userType === 'admin'): ?>
             <a href="admin/manage_tickets.php" class="menu-item">
                 <span class="menu-icon">🎫</span>
-                <span class="menu-text">Manage Tickets</span>
+                <span class="menu-text">Manage All Tickets</span>
             </a>
             <a href="admin/manage_users.php" class="menu-item">
                 <span class="menu-icon">👥</span>
@@ -651,6 +634,14 @@ tbody tr:hover {
                 <span class="menu-text">Audit Logs</span>
             </a>
             <?php endif; ?>
+        </div>
+        
+        <div class="menu-section">
+            <div class="menu-section-title">Reports</div>
+            <a href="printables/index.php" class="menu-item">
+                <span class="menu-icon">📊</span>
+                <span class="menu-text">Reports & Printables</span>
+            </a>
         </div>
         
         <?php if ($userType === 'admin'): ?>
@@ -668,8 +659,6 @@ tbody tr:hover {
         <?php endif; ?>
     </div>
 </aside>
-
-<button class="sidebar-toggle" id="sidebarToggle">☰</button>
 
 <!-- Main Content -->
 <div class="main-content">
@@ -807,22 +796,12 @@ tbody tr:hover {
     <div class="card">
         <div class="card-header">
             <h2 class="card-title">Recent Tickets</h2>
-            <?php if ($userType === 'employee'): ?>
-                <a href="tickets/create.php" class="btn btn-primary">+ Create Ticket</a>
-            <?php elseif ($userType === 'admin'): ?>
-                <a href="admin/manage_tickets.php" class="btn btn-primary">Manage All</a>
-            <?php elseif ($userType === 'service_provider'): ?>
-                <a href="provider/my_tickets.php" class="btn btn-primary">View All</a>
-            <?php endif; ?>
         </div>
         
         <?php if (empty($recentTickets)): ?>
             <div class="empty-state">
                 <div class="empty-state-icon">📋</div>
                 <p>No tickets found</p>
-                <?php if ($userType === 'employee'): ?>
-                    <a href="tickets/create.php" class="btn btn-primary" style="margin-top:16px">Create Your First Ticket</a>
-                <?php endif; ?>
             </div>
         <?php else: ?>
             <table>
@@ -856,7 +835,7 @@ tbody tr:hover {
 </div>
 
 <script>
-// Sidebar toggle
+// FIXED: Sidebar toggle
 const sidebar = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebarToggle');
 
@@ -868,10 +847,19 @@ sidebarToggle.addEventListener('click', () => {
 document.addEventListener('click', (e) => {
     if (window.innerWidth <= 768) {
         if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-            sidebar.classList.add('collapsed');
+            if (sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
         }
     }
 });
+
+// Mobile: toggle with 'show' class instead of 'collapsed'
+if (window.innerWidth <= 768) {
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('show');
+    });
+}
 </script>
 <script src="../assets/js/theme.js"></script>
 <script src="../assets/js/notifications.js"></script>
