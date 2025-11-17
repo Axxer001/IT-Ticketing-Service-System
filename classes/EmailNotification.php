@@ -8,13 +8,15 @@ use PHPMailer\PHPMailer\Exception;
 /**
  * Email Notification Handler using PHPMailer
  * Sends email notifications to Gmail addresses
+ * ENHANCED VERSION - Better debugging and error handling
  */
 class EmailNotification {
     private $db;
     private $mailer;
     private $enabled;
+    private $debug;
     
-    // Configuration from email_config.php
+    // Configuration
     private $smtpHost;
     private $smtpPort;
     private $smtpUsername;
@@ -28,7 +30,7 @@ class EmailNotification {
         // Load configuration
         $this->loadConfig();
         
-        // Only setup mailer if email is enabled
+        // Setup mailer if email is enabled
         if ($this->enabled) {
             $this->setupMailer();
         }
@@ -38,7 +40,6 @@ class EmailNotification {
      * Load email configuration
      */
     private function loadConfig() {
-        // Check if config file exists
         $configFile = __DIR__ . '/email_config.php';
         
         if (file_exists($configFile)) {
@@ -51,15 +52,19 @@ class EmailNotification {
             $this->fromEmail = $config['from_email'] ?? '';
             $this->fromName = $config['from_name'] ?? 'Nexon IT Support';
             $this->enabled = $config['enabled'] ?? false;
+            $this->debug = $config['debug'] ?? false;
+            
+            if ($this->debug) {
+                error_log("Email config loaded - Host: {$this->smtpHost}, Port: {$this->smtpPort}, From: {$this->fromEmail}");
+            }
         } else {
-            // Default fallback (emails disabled if no config)
-            error_log("Email config file not found. Email notifications disabled.");
+            error_log("ERROR: Email config file not found at: " . $configFile);
             $this->enabled = false;
         }
         
-        // Disable if credentials are not set
+        // Validate credentials
         if (empty($this->smtpUsername) || empty($this->smtpPassword)) {
-            error_log("SMTP credentials not configured. Email notifications disabled.");
+            error_log("ERROR: SMTP credentials not configured - Username: " . (empty($this->smtpUsername) ? 'MISSING' : 'SET') . ", Password: " . (empty($this->smtpPassword) ? 'MISSING' : 'SET'));
             $this->enabled = false;
         }
     }
@@ -80,50 +85,92 @@ class EmailNotification {
             $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $this->mailer->Port = $this->smtpPort;
             
-            // Sender info
+            // Debug output (if enabled)
+            if ($this->debug) {
+                $this->mailer->SMTPDebug = 2; // Enable verbose debug output
+                $this->mailer->Debugoutput = function($str, $level) {
+                    error_log("SMTP DEBUG: $str");
+                };
+            }
+            
+            // Set from address
             $this->mailer->setFrom($this->fromEmail, $this->fromName);
             
-            // Optional: Reduce timeout for faster failure
-            $this->mailer->Timeout = 10;
+            // Encoding
+            $this->mailer->CharSet = 'UTF-8';
+            
+            // Timeout
+            $this->mailer->Timeout = 30; // Increased timeout for better reliability
+            
+            // Additional settings for Gmail
+            $this->mailer->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+            );
+            
+            if ($this->debug) {
+                error_log("PHPMailer configured successfully");
+            }
             
         } catch (Exception $e) {
-            error_log("PHPMailer setup error: " . $e->getMessage());
+            error_log("ERROR: PHPMailer setup failed - " . $e->getMessage());
             $this->enabled = false;
         }
     }
     
     /**
      * Send email notification
-     * @param string $toEmail - Recipient email
-     * @param string $subject - Email subject
-     * @param string $message - Email body (HTML supported)
-     * @return bool - Success status
      */
     public function sendEmail($toEmail, $subject, $message) {
-        // Skip if emails are disabled
         if (!$this->enabled) {
-            error_log("Email notifications disabled. Skipping email to: " . $toEmail);
+            $msg = "Email notifications disabled - To: $toEmail, Subject: $subject";
+            error_log("WARNING: " . $msg);
             return true; // Return true to not break functionality
         }
         
+        // Validate email
+        if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+            error_log("ERROR: Invalid email address - $toEmail");
+            return false;
+        }
+        
         try {
-            // Reset recipients for each email
+            // Clear previous recipients
             $this->mailer->clearAddresses();
+            $this->mailer->clearAttachments();
+            $this->mailer->clearReplyTos();
+            
+            // Set recipient
             $this->mailer->addAddress($toEmail);
             
             // Content
             $this->mailer->isHTML(true);
             $this->mailer->Subject = $subject;
             $this->mailer->Body = $this->getEmailTemplate($subject, $message);
-            $this->mailer->AltBody = strip_tags($message); // Plain text version
+            $this->mailer->AltBody = strip_tags($message);
             
-            $this->mailer->send();
-            error_log("✅ Email sent successfully to: " . $toEmail);
-            return true;
+            if ($this->debug) {
+                error_log("Attempting to send email to: $toEmail, Subject: $subject");
+            }
+            
+            // Send
+            $result = $this->mailer->send();
+            
+            if ($result) {
+                error_log("✅ SUCCESS: Email sent to $toEmail - Subject: $subject");
+                return true;
+            } else {
+                error_log("❌ FAILED: Email not sent to $toEmail");
+                return false;
+            }
             
         } catch (Exception $e) {
-            error_log("❌ Email send error: " . $this->mailer->ErrorInfo);
-            // Don't throw exception - just log and continue
+            $errorMsg = $this->mailer->ErrorInfo;
+            error_log("❌ ERROR: Email send failed to $toEmail - " . $errorMsg);
+            error_log("Exception: " . $e->getMessage());
             return false;
         }
     }
@@ -145,22 +192,25 @@ class EmailNotification {
                     color: #333; 
                     margin: 0;
                     padding: 0;
+                    background-color: #f4f4f4;
                 }
                 .container { 
                     max-width: 600px; 
-                    margin: 0 auto; 
-                    padding: 20px; 
+                    margin: 20px auto; 
+                    background: white;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 }
                 .header { 
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                     color: white; 
                     padding: 30px 20px; 
                     text-align: center; 
-                    border-radius: 10px 10px 0 0; 
                 }
                 .header h1 {
                     margin: 0;
-                    font-size: 32px;
+                    font-size: 28px;
                     letter-spacing: 2px;
                 }
                 .header p {
@@ -169,45 +219,54 @@ class EmailNotification {
                     opacity: 0.9;
                 }
                 .content { 
-                    background: #f8f9fa; 
                     padding: 30px; 
-                    border-radius: 0 0 10px 10px;
-                    border: 1px solid #e0e0e0;
                 }
                 .content h2 {
                     color: #667eea;
                     margin-top: 0;
-                    font-size: 22px;
+                    font-size: 20px;
+                }
+                .content p {
+                    margin: 15px 0;
+                    color: #555;
                 }
                 .content ul {
-                    background: white;
+                    background: #f8f9fa;
                     padding: 20px 20px 20px 40px;
                     border-left: 4px solid #667eea;
                     margin: 15px 0;
                 }
                 .content ul li {
                     margin: 10px 0;
+                    color: #333;
+                }
+                .button { 
+                    display: inline-block; 
+                    padding: 12px 30px; 
+                    background: #667eea; 
+                    color: white !important; 
+                    text-decoration: none; 
+                    border-radius: 5px; 
+                    margin-top: 20px;
+                    font-weight: 600;
                 }
                 .footer { 
                     text-align: center; 
-                    margin-top: 30px; 
-                    padding-top: 20px;
+                    padding: 20px; 
                     font-size: 12px; 
                     color: #666; 
+                    background: #f8f9fa;
                     border-top: 1px solid #e0e0e0;
                 }
                 .footer p {
                     margin: 5px 0;
                 }
-                .button { 
-                    display: inline-block; 
-                    padding: 12px 24px; 
-                    background: #667eea; 
-                    color: white !important; 
-                    text-decoration: none; 
-                    border-radius: 5px; 
-                    margin-top: 15px;
-                    font-weight: 600;
+                .important {
+                    background: #fff3cd;
+                    border-left: 4px solid #ffc107;
+                    padding: 15px;
+                    margin: 20px 0;
+                    border-radius: 4px;
                 }
             </style>
         </head>
@@ -219,9 +278,7 @@ class EmailNotification {
                 </div>
                 <div class='content'>
                     <h2>{$subject}</h2>
-                    <div style='margin: 20px 0; color: #555;'>
-                        {$message}
-                    </div>
+                    {$message}
                 </div>
                 <div class='footer'>
                     <p><strong>This is an automated email from Nexon IT Ticketing System.</strong></p>
@@ -252,6 +309,9 @@ class EmailNotification {
                 <li><strong>Status:</strong> Pending Assignment</li>
             </ul>
             <p>You will receive email updates as your ticket is processed by our team.</p>
+            <div class='important'>
+                <strong>📧 Important:</strong> Please keep this email for your reference. Your ticket number is <strong>{$ticketNumber}</strong>.
+            </div>
             <p style='margin-top: 20px;'>Thank you for contacting IT Support.</p>
         ";
         
@@ -273,6 +333,9 @@ class EmailNotification {
                 <li><strong>Status:</strong> Assigned</li>
             </ul>
             <p>The service provider will begin working on your request shortly. You will receive further updates as work progresses.</p>
+            <div class='important'>
+                <strong>⏱️ Expected Response:</strong> A service provider will contact you within 24 hours.
+            </div>
         ";
         
         return $this->sendEmail($employeeEmail, $subject, $message);
@@ -305,14 +368,17 @@ class EmailNotification {
         
         if ($comment) {
             $message .= "
-            <div style='background: white; padding: 15px; border-left: 3px solid #667eea; margin: 15px 0;'>
+            <div style='background: #f8f9fa; padding: 15px; border-left: 3px solid #667eea; margin: 15px 0;'>
                 <strong>Provider Comment:</strong><br>
                 " . nl2br(htmlspecialchars($comment)) . "
             </div>";
         }
         
         if ($newStatus === 'resolved') {
-            $message .= "<p style='margin-top: 20px;'><strong>Please log in to the system to rate the service provided.</strong></p>";
+            $message .= "
+            <div class='important'>
+                <strong>⭐ Rate Our Service:</strong> Please log in to the system to rate the service provided. Your feedback helps us improve!
+            </div>";
         }
         
         return $this->sendEmail($employeeEmail, $subject, $message);
@@ -343,6 +409,9 @@ class EmailNotification {
                 <li><strong>Priority:</strong> <span style='color: {$priorityColor}; font-weight: bold;'>" . strtoupper($priority) . "</span></li>
             </ul>
             <p>Please log in to the system to review the ticket details and begin working on this request.</p>
+            <div class='important'>
+                <strong>⚡ Action Required:</strong> Please acknowledge this ticket within 2 hours.
+            </div>
         ";
         
         return $this->sendEmail($providerEmail, $subject, $message);
@@ -358,7 +427,7 @@ class EmailNotification {
             <p>A new comment has been added to your ticket.</p>
             <p><strong>Ticket Number:</strong> {$ticketNumber}</p>
             <p><strong>From:</strong> {$commenterName}</p>
-            <div style='background: white; padding: 15px; border-left: 3px solid #667eea; margin: 15px 0;'>
+            <div style='background: #f8f9fa; padding: 15px; border-left: 3px solid #667eea; margin: 15px 0;'>
                 <strong>Comment:</strong><br>
                 " . nl2br(htmlspecialchars($comment)) . "
             </div>
@@ -366,5 +435,64 @@ class EmailNotification {
         ";
         
         return $this->sendEmail($recipientEmail, $subject, $message);
+    }
+    
+    /**
+     * Test email configuration
+     */
+    public function testEmailConfig($testEmail) {
+        if (!$this->enabled) {
+            return [
+                'success' => false,
+                'message' => '❌ Email notifications are DISABLED. Please check classes/email_config.php - Make sure "enabled" is set to true and credentials are configured.'
+            ];
+        }
+        
+        // Validate email
+        if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
+            return [
+                'success' => false,
+                'message' => '❌ Invalid email address format. Please enter a valid email.'
+            ];
+        }
+        
+        $subject = "Nexon IT Ticketing System - Email Test ✅";
+        $message = "
+            <p><strong>🎉 Congratulations!</strong></p>
+            <p>Your email configuration is working correctly.</p>
+            <p>This is a test email sent from the Nexon IT Ticketing System at <strong>" . date('Y-m-d H:i:s') . "</strong></p>
+            <p><strong>Configuration Details:</strong></p>
+            <ul>
+                <li><strong>SMTP Host:</strong> {$this->smtpHost}</li>
+                <li><strong>SMTP Port:</strong> {$this->smtpPort}</li>
+                <li><strong>From Email:</strong> {$this->fromEmail}</li>
+                <li><strong>Test Sent To:</strong> {$testEmail}</li>
+            </ul>
+            <div class='important'>
+                <strong>✅ Success!</strong> Your SMTP configuration is correct. You can now receive ticket notifications via email.
+            </div>
+            <p style='margin-top: 20px;'>If you received this email, the system is ready to send notifications for all ticket activities.</p>
+        ";
+        
+        error_log("📧 Attempting test email to: $testEmail");
+        $result = $this->sendEmail($testEmail, $subject, $message);
+        
+        if ($result) {
+            return [
+                'success' => true,
+                'message' => '✅ Test email sent successfully! Please check your inbox at <strong>' . htmlspecialchars($testEmail) . '</strong> (also check spam/junk folder). If you don\'t see it within 2-3 minutes, check the PHP error log.'
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => '❌ Failed to send test email. Common issues:<br>
+                    1. Check your Gmail App Password (must be 16 characters, no spaces)<br>
+                    2. Verify 2-Step Verification is enabled on your Google Account<br>
+                    3. Make sure your internet connection is working<br>
+                    4. Check if port 587 is blocked by firewall<br>
+                    5. Review PHP error log at: C:\xampp\php\logs\php_error_log<br>
+                    <br><strong>Current Config:</strong> ' . $this->smtpUsername . ' connecting to ' . $this->smtpHost . ':' . $this->smtpPort
+            ];
+        }
     }
 }
