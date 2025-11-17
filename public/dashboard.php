@@ -55,6 +55,7 @@ $recentTickets = $ticketObj->getTickets($filters, 5, 0);
     --text-secondary: #64748b;
     --border-color: #e2e8f0;
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --sidebar-width: 260px;
 }
 
 [data-theme="dark"] {
@@ -79,6 +80,105 @@ body {
     transition: background 0.3s, color 0.3s;
 }
 
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 64px;
+    width: var(--sidebar-width);
+    height: calc(100vh - 64px);
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 90;
+}
+
+.sidebar.collapsed {
+    transform: translateX(calc(-1 * var(--sidebar-width)));
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-toggle {
+    position: fixed;
+    left: 10px;
+    top: 74px;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 95;
+    transition: left 0.3s ease;
+    font-size: 20px;
+}
+
+.sidebar.collapsed + .sidebar-toggle {
+    left: 10px;
+}
+
+.sidebar:not(.collapsed) + .sidebar-toggle {
+    left: calc(var(--sidebar-width) + 10px);
+}
+
+.sidebar-menu {
+    padding: 8px;
+}
+
+.menu-section {
+    margin-bottom: 24px;
+}
+
+.menu-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 700;
+    padding: 8px 12px;
+    letter-spacing: 0.5px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.2s;
+    margin-bottom: 4px;
+}
+
+.menu-item:hover {
+    background: var(--bg-main);
+}
+
+.menu-item.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+}
+
+.menu-icon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+}
+
+.menu-text {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Navbar */
 .navbar {
     background: var(--bg-card);
     border-bottom: 1px solid var(--border-color);
@@ -87,9 +187,12 @@ body {
     justify-content: space-between;
     align-items: center;
     box-shadow: var(--shadow);
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 100;
+    height: 64px;
 }
 
 .navbar-brand {
@@ -151,6 +254,8 @@ body {
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s;
+    text-decoration: none;
+    color: var(--text-primary);
 }
 
 .user-menu:hover {
@@ -185,10 +290,16 @@ body {
     text-transform: capitalize;
 }
 
-.container {
-    max-width: 1400px;
-    margin: 0 auto;
+/* Main Content */
+.main-content {
+    margin-left: var(--sidebar-width);
+    margin-top: 64px;
     padding: 24px;
+    transition: margin-left 0.3s ease;
+}
+
+.sidebar.collapsed ~ .main-content {
+    margin-left: 0;
 }
 
 .page-header {
@@ -263,12 +374,6 @@ body {
     margin-top: 8px;
 }
 
-.content-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 24px;
-}
-
 .card {
     background: var(--bg-card);
     border-radius: 16px;
@@ -312,10 +417,6 @@ body {
 .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
-}
-
-.table-responsive {
-    overflow-x: auto;
 }
 
 table {
@@ -383,12 +484,16 @@ tbody tr:hover {
 }
 
 @media (max-width: 768px) {
-    .navbar {
-        padding: 12px 16px;
+    .sidebar {
+        transform: translateX(calc(-1 * var(--sidebar-width)));
     }
     
-    .navbar-brand {
-        font-size: 20px;
+    .sidebar.collapsed {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
     }
     
     .user-info {
@@ -397,24 +502,6 @@ tbody tr:hover {
     
     .stats-grid {
         grid-template-columns: 1fr;
-    }
-
-    
-    .page-title {
-        font-size: 24px;
-    }
-    
-    .container {
-        padding: 16px;
-    }
-    
-    .card {
-        padding: 16px;
-    }
-    
-    th, td {
-        padding: 8px;
-        font-size: 13px;
     }
 }
 
@@ -480,52 +567,112 @@ tbody tr:hover {
 </head>
 <body>
 
+<!-- Navbar -->
 <nav class="navbar">
     <div class="navbar-brand">NEXON</div>
     
-   <!-- REPLACE the navbar-actions section in dashboard.php with this: -->
-
-<div class="navbar-actions">
-    <button class="theme-toggle" id="themeToggle" data-theme-toggle>
-        <?= ($_SESSION['theme'] ?? 'light') === 'light' ? '🌙' : '☀️' ?>
-    </button>
-    
-    <button class="notification-btn">
-        🔔
-        <?php if ($unreadCount > 0): ?>
-            <span class="notification-badge" style="display:block"><?= $unreadCount ?></span>
-        <?php endif; ?>
-    </button>
-    
-    <!-- NEW REPORTS LINK -->
-    <a href="printables/index.php" class="notification-btn" style="text-decoration:none; border:2px solid var(--border-color); width:auto; padding:0 12px;" title="Reports & Printables">
-        📊
-    </a>
-    <!-- END NEW LINK -->
-    
-    <div class="user-menu" onclick="location.href='logout.php'">
-        <div class="user-avatar">
-            <?= strtoupper(substr($profile['email'], 0, 2)) ?>
-        </div>
-        <div class="user-info">
-            <div class="user-name">
-                <?php
-                if ($userType === 'employee') {
-                    echo htmlspecialchars($profile['profile']['first_name'] . ' ' . $profile['profile']['last_name']);
-                } elseif ($userType === 'service_provider') {
-                    echo htmlspecialchars($profile['profile']['provider_name']);
-                } else {
-                    echo 'Admin';
-                }
-                ?>
+    <div class="navbar-actions">
+        <button class="theme-toggle" id="themeToggle" data-theme-toggle>
+            <?= ($_SESSION['theme'] ?? 'light') === 'light' ? '🌙' : '☀️' ?>
+        </button>
+        
+        <button class="notification-btn">
+            🔔
+            <?php if ($unreadCount > 0): ?>
+                <span class="notification-badge" style="display:block"><?= $unreadCount ?></span>
+            <?php endif; ?>
+        </button>
+        
+        <a href="account.php" class="user-menu">
+            <div class="user-avatar">
+                <?= strtoupper(substr($profile['email'], 0, 2)) ?>
             </div>
-            <div class="user-role"><?= htmlspecialchars($userType) ?></div>
-        </div>
+            <div class="user-info">
+                <div class="user-name">
+                    <?php
+                    if ($userType === 'employee') {
+                        echo htmlspecialchars($profile['profile']['first_name'] . ' ' . $profile['profile']['last_name']);
+                    } elseif ($userType === 'service_provider') {
+                        echo htmlspecialchars($profile['profile']['provider_name']);
+                    } else {
+                        echo 'Admin';
+                    }
+                    ?>
+                </div>
+                <div class="user-role"><?= htmlspecialchars($userType) ?></div>
+            </div>
+        </a>
     </div>
-</div>
 </nav>
 
-<div class="container">
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div style="font-weight: 700; font-size: 16px;">Menu</div>
+    </div>
+    
+    <div class="sidebar-menu">
+        <div class="menu-section">
+            <div class="menu-section-title">Main</div>
+            <a href="dashboard.php" class="menu-item active">
+                <span class="menu-icon">🏠</span>
+                <span class="menu-text">Dashboard</span>
+            </a>
+            
+            <?php if ($userType === 'employee'): ?>
+            <a href="tickets/create.php" class="menu-item">
+                <span class="menu-icon">➕</span>
+                <span class="menu-text">Create Ticket</span>
+            </a>
+            <a href="tickets/list.php" class="menu-item">
+                <span class="menu-icon">📋</span>
+                <span class="menu-text">My Tickets</span>
+            </a>
+            <?php elseif ($userType === 'service_provider'): ?>
+            <a href="provider/my_tickets.php" class="menu-item">
+                <span class="menu-icon">🎫</span>
+                <span class="menu-text">My Assignments</span>
+            </a>
+            <?php elseif ($userType === 'admin'): ?>
+            <a href="admin/manage_tickets.php" class="menu-item">
+                <span class="menu-icon">🎫</span>
+                <span class="menu-text">Manage Tickets</span>
+            </a>
+            <a href="admin/manage_users.php" class="menu-item">
+                <span class="menu-icon">👥</span>
+                <span class="menu-text">Manage Users</span>
+            </a>
+            <a href="admin/analytics.php" class="menu-item">
+                <span class="menu-icon">📊</span>
+                <span class="menu-text">Analytics</span>
+            </a>
+            <a href="admin/audit_logs.php" class="menu-item">
+                <span class="menu-icon">📜</span>
+                <span class="menu-text">Audit Logs</span>
+            </a>
+            <?php endif; ?>
+        </div>
+        
+        <?php if ($userType === 'admin'): ?>
+        <div class="menu-section">
+            <div class="menu-section-title">System</div>
+            <a href="admin/test_email.php" class="menu-item">
+                <span class="menu-icon">📧</span>
+                <span class="menu-text">Email Test</span>
+            </a>
+            <a href="admin/email_diagnostic.php" class="menu-item">
+                <span class="menu-icon">🔍</span>
+                <span class="menu-text">Email Diagnostic</span>
+            </a>
+        </div>
+        <?php endif; ?>
+    </div>
+</aside>
+
+<button class="sidebar-toggle" id="sidebarToggle">☰</button>
+
+<!-- Main Content -->
+<div class="main-content">
     <div class="page-header">
         <h1 class="page-title">Dashboard</h1>
         <p class="page-subtitle">Welcome back! Here's what's happening today.</p>
@@ -657,61 +804,75 @@ tbody tr:hover {
         <?php endif; ?>
     </div>
 
-    <div class="content-grid">
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Recent Tickets</h2>
-                <?php if ($userType === 'employee'): ?>
-                    <a href="tickets/create.php" class="btn btn-primary">+ Create Ticket</a>
-                <?php elseif ($userType === 'admin'): ?>
-                    <a href="admin/manage_tickets.php" class="btn btn-primary">Manage All</a>
-                <?php elseif ($userType === 'service_provider'): ?>
-                    <a href="provider/my_tickets.php" class="btn btn-primary">View All</a>
-                <?php endif; ?>
-            </div>
-            
-            <?php if (empty($recentTickets)): ?>
-                <div class="empty-state">
-                    <div class="empty-state-icon">📋</div>
-                    <p>No tickets found</p>
-                    <?php if ($userType === 'employee'): ?>
-                        <a href="tickets/create.php" class="btn btn-primary" style="margin-top:16px">Create Your First Ticket</a>
-                    <?php endif; ?>
-                </div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Ticket #</th>
-                                <?php if ($userType !== 'employee'): ?>
-                                    <th>Employee</th>
-                                <?php endif; ?>
-                                <th>Device</th>
-                                <th>Priority</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($recentTickets as $ticket): ?>
-                                <tr onclick="location.href='tickets/view.php?id=<?= $ticket['id'] ?>'" style="cursor:pointer">
-                                    <td><strong><?= htmlspecialchars($ticket['ticket_number']) ?></strong></td>
-                                    <?php if ($userType !== 'employee'): ?>
-                                        <td><?= htmlspecialchars($ticket['first_name'] . ' ' . $ticket['last_name']) ?></td>
-                                    <?php endif; ?>
-                                    <td><?= htmlspecialchars($ticket['device_type_name']) ?></td>
-                                    <td><span class="badge badge-<?= $ticket['priority'] ?>"><?= ucfirst($ticket['priority']) ?></span></td>
-                                    <td><span class="badge badge-<?= str_replace('_', '-', $ticket['status']) ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Recent Tickets</h2>
+            <?php if ($userType === 'employee'): ?>
+                <a href="tickets/create.php" class="btn btn-primary">+ Create Ticket</a>
+            <?php elseif ($userType === 'admin'): ?>
+                <a href="admin/manage_tickets.php" class="btn btn-primary">Manage All</a>
+            <?php elseif ($userType === 'service_provider'): ?>
+                <a href="provider/my_tickets.php" class="btn btn-primary">View All</a>
             <?php endif; ?>
         </div>
+        
+        <?php if (empty($recentTickets)): ?>
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <p>No tickets found</p>
+                <?php if ($userType === 'employee'): ?>
+                    <a href="tickets/create.php" class="btn btn-primary" style="margin-top:16px">Create Your First Ticket</a>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ticket #</th>
+                        <?php if ($userType !== 'employee'): ?>
+                            <th>Employee</th>
+                        <?php endif; ?>
+                        <th>Device</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($recentTickets as $ticket): ?>
+                        <tr onclick="location.href='tickets/view.php?id=<?= $ticket['id'] ?>'" style="cursor:pointer">
+                            <td><strong><?= htmlspecialchars($ticket['ticket_number']) ?></strong></td>
+                            <?php if ($userType !== 'employee'): ?>
+                                <td><?= htmlspecialchars($ticket['first_name'] . ' ' . $ticket['last_name']) ?></td>
+                            <?php endif; ?>
+                            <td><?= htmlspecialchars($ticket['device_type_name']) ?></td>
+                            <td><span class="badge badge-<?= $ticket['priority'] ?>"><?= ucfirst($ticket['priority']) ?></span></td>
+                            <td><span class="badge badge-<?= str_replace('_', '-', $ticket['status']) ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
     </div>
 </div>
 
+<script>
+// Sidebar toggle
+const sidebar = document.getElementById('sidebar');
+const sidebarToggle = document.getElementById('sidebarToggle');
+
+sidebarToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+});
+
+// Close sidebar on mobile when clicking outside
+document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768) {
+        if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+            sidebar.classList.add('collapsed');
+        }
+    }
+});
+</script>
 <script src="../assets/js/theme.js"></script>
 <script src="../assets/js/notifications.js"></script>
 </body>

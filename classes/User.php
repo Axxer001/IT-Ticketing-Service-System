@@ -1,245 +1,536 @@
 <?php
-require_once "Database.php";
-require_once "AuditLog.php";
+session_start();
+require_once "../classes/User.php";
 
-/**
- * User Authentication and Management Class
- */
-class User {
-    private $db;
-    private $audit;
-    
-    public function __construct() {
-        $this->db = new Database();
-        $this->audit = new AuditLog();
-    }
-    
-    /**
-     * Register new user
-     */
-    public function register($email, $password, $userType, $additionalData = []) {
-        try {
-            $this->db->beginTransaction();
-            
-            // Check if email exists
-            if ($this->emailExists($email)) {
-                throw new Exception("Email already exists");
-            }
-            
-            // Hash password
-            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-            
-            // Insert user
-            $sql = "INSERT INTO users (email, password_hash, user_type) VALUES (?, ?, ?)";
-            $stmt = $this->db->connect()->prepare($sql);
-            $stmt->execute([$email, $passwordHash, $userType]);
-            
-            $userId = $this->db->lastInsertId();
-            
-            // Create profile based on user type
-            if ($userType === 'employee' && !empty($additionalData)) {
-                $this->createEmployeeProfile($userId, $additionalData);
-            } elseif ($userType === 'service_provider' && !empty($additionalData)) {
-                $this->createServiceProviderProfile($userId, $additionalData);
-            }
-            
-            // Create default preferences
-            $prefSql = "INSERT INTO user_preferences (user_id) VALUES (?)";
-            $this->db->connect()->prepare($prefSql)->execute([$userId]);
-            
-            $this->db->commit();
-            
-            // Log audit
-            $this->audit->log($userId, 'user_registered', 'users', $userId, null, 
-                json_encode(['email' => $email, 'type' => $userType]));
-            
-            return $userId;
-            
-        } catch (Exception $e) {
-            $this->db->rollback();
-            error_log("Registration error: " . $e->getMessage());
-            throw $e;
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
+$userObj = new User();
+$profile = $userObj->getUserProfile($_SESSION['user_id']);
+$stats = $userObj->getUserStatistics($_SESSION['user_id']);
+
+$success = '';
+$error = '';
+
+// Handle form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['update_gmail'])) {
+        $gmail = trim($_POST['gmail']);
+        $result = $userObj->updateGmailBinding($_SESSION['user_id'], $gmail);
+        
+        if ($result['success']) {
+            $success = $result['message'];
+            $profile = $userObj->getUserProfile($_SESSION['user_id']); // Refresh
+        } else {
+            $error = $result['message'];
         }
     }
     
-    /**
-     * User login
-     */
-    public function login($email, $password) {
-        $sql = "SELECT u.*, up.theme 
-                FROM users u 
-                LEFT JOIN user_preferences up ON u.id = up.user_id 
-                WHERE u.email = ? AND u.is_active = 1";
+    if (isset($_POST['update_job_position']) && $_SESSION['user_type'] === 'employee') {
+        $jobPosition = trim($_POST['job_position']);
+        $result = $userObj->updateJobPosition($_SESSION['user_id'], $jobPosition);
         
-        $stmt = $this->db->connect()->prepare($sql);
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
-        
-        if ($user && password_verify($password, $user['password_hash'])) {
-            // Update last login
-            $updateSql = "UPDATE users SET last_login = NOW() WHERE id = ?";
-            $this->db->connect()->prepare($updateSql)->execute([$user['id']]);
-            
-            // Log audit
-            $this->audit->log($user['id'], 'user_login', 'users', $user['id']);
-            
-            return $user;
+        if ($result['success']) {
+            $success = $result['message'];
+            $profile = $userObj->getUserProfile($_SESSION['user_id']); // Refresh
+        } else {
+            $error = $result['message'];
         }
-        
-        return false;
-    }
-    
-    /**
-     * Get user profile with details
-     */
-    public function getUserProfile($userId) {
-        $sql = "SELECT u.*, up.theme, up.notifications_enabled 
-                FROM users u 
-                LEFT JOIN user_preferences up ON u.id = up.user_id 
-                WHERE u.id = ?";
-        
-        $stmt = $this->db->connect()->prepare($sql);
-        $stmt->execute([$userId]);
-        $user = $stmt->fetch();
-        
-        if (!$user) return null;
-        
-        // Get additional profile data based on user type
-        if ($user['user_type'] === 'employee') {
-            $empSql = "SELECT e.*, d.name as department_name, d.category as department_category 
-                       FROM employees e 
-                       JOIN departments d ON e.department_id = d.id 
-                       WHERE e.user_id = ?";
-            $empStmt = $this->db->connect()->prepare($empSql);
-            $empStmt->execute([$userId]);
-            $user['profile'] = $empStmt->fetch();
-            
-        } elseif ($user['user_type'] === 'service_provider') {
-            $spSql = "SELECT * FROM service_providers WHERE user_id = ?";
-            $spStmt = $this->db->connect()->prepare($spSql);
-            $spStmt->execute([$userId]);
-            $user['profile'] = $spStmt->fetch();
-        }
-        
-        return $user;
-    }
-    
-    /**
-     * Create employee profile
-     */
-    private function createEmployeeProfile($userId, $data) {
-        $sql = "INSERT INTO employees (user_id, first_name, last_name, department_id, contact_number) 
-                VALUES (?, ?, ?, ?, ?)";
-        $stmt = $this->db->connect()->prepare($sql);
-        $stmt->execute([
-            $userId,
-            $data['first_name'],
-            $data['last_name'],
-            $data['department_id'],
-            $data['contact_number'] ?? null
-        ]);
-    }
-    
-    /**
-     * Create service provider profile
-     */
-    private function createServiceProviderProfile($userId, $data) {
-        $sql = "INSERT INTO service_providers (user_id, provider_name, specialization, contact_number) 
-                VALUES (?, ?, ?, ?)";
-        $stmt = $this->db->connect()->prepare($sql);
-        $stmt->execute([
-            $userId,
-            $data['provider_name'],
-            $data['specialization'] ?? null,
-            $data['contact_number'] ?? null
-        ]);
-    }
-    
-    /**
-     * Check if email exists
-     */
-    public function emailExists($email) {
-        $sql = "SELECT id FROM users WHERE email = ?";
-        $stmt = $this->db->connect()->prepare($sql);
-        $stmt->execute([$email]);
-        return $stmt->fetch() !== false;
-    }
-    
-    /**
-     * Update user preferences
-     */
-    public function updatePreferences($userId, $theme, $notificationsEnabled = true) {
-        $sql = "UPDATE user_preferences 
-                SET theme = ?, notifications_enabled = ?, updated_at = NOW() 
-                WHERE user_id = ?";
-        $stmt = $this->db->connect()->prepare($sql);
-        return $stmt->execute([$theme, $notificationsEnabled, $userId]);
-    }
-    
-    /**
-     * Get all service providers
-     */
-    public function getAllServiceProviders() {
-        $sql = "SELECT sp.*, u.email, u.is_active,
-                COUNT(t.id) as current_assignments
-                FROM service_providers sp
-                JOIN users u ON sp.user_id = u.id
-                LEFT JOIN tickets t ON sp.id = t.assigned_provider_id 
-                    AND t.status IN ('assigned', 'in_progress')
-                WHERE u.is_active = 1
-                GROUP BY sp.id
-                ORDER BY sp.provider_name";
-        
-        $stmt = $this->db->connect()->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll();
-    }
-    
-    /**
-     * Get available service providers (not at max capacity)
-     */
-    public function getAvailableServiceProviders() {
-        $sql = "SELECT sp.*, u.email,
-                COUNT(t.id) as current_assignments
-                FROM service_providers sp
-                JOIN users u ON sp.user_id = u.id
-                LEFT JOIN tickets t ON sp.id = t.assigned_provider_id 
-                    AND t.status IN ('assigned', 'in_progress')
-                WHERE u.is_active = 1 AND sp.is_available = 1
-                GROUP BY sp.id
-                HAVING current_assignments < sp.max_concurrent_tickets
-                ORDER BY current_assignments ASC, sp.rating_average DESC";
-        
-        $stmt = $this->db->connect()->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll();
-    }
-    
-    /**
-     * Get all departments
-     */
-    public function getAllDepartments() {
-        $sql = "SELECT * FROM departments ORDER BY category, name";
-        $stmt = $this->db->connect()->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll();
-    }
-    
-    /**
-     * Get departments grouped by category
-     */
-    public function getDepartmentsByCategory() {
-        $departments = $this->getAllDepartments();
-        $grouped = [];
-        
-        foreach ($departments as $dept) {
-            $category = $dept['category'];
-            if (!isset($grouped[$category])) {
-                $grouped[$category] = [];
-            }
-            $grouped[$category][] = $dept;
-        }
-        
-        return $grouped;
     }
 }
+?>
+<!DOCTYPE html>
+<html lang="en" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account Settings - Nexon</title>
+<link rel="stylesheet" href="../assets/css/theme.css">
+<script>
+    const PHP_SESSION_THEME = <?= json_encode($_SESSION['theme'] ?? 'light') ?>;
+</script>
+<style>
+:root {
+    --primary: #667eea;
+    --secondary: #764ba2;
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --border-color: #334155;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-main);
+    color: var(--text-primary);
+}
+
+.navbar {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+}
+
+.navbar-brand {
+    font-size: 24px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.back-btn {
+    padding: 8px 16px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 24px auto;
+    padding: 0 24px;
+}
+
+.page-header {
+    margin-bottom: 32px;
+}
+
+.page-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border-left: 4px solid var(--success);
+}
+
+.alert-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-left: 4px solid #ef4444;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.card-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.help-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+    width: 100%;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-box {
+    background: var(--bg-main);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.quick-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.quick-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-main);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.3s;
+    border: 1px solid var(--border-color);
+}
+
+.quick-link:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.quick-link-icon {
+    font-size: 24px;
+}
+
+.quick-link-text {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">NEXON</div>
+    <a href="dashboard.php" class="back-btn">← Back to Dashboard</a>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">Account Settings</h1>
+        <p class="page-subtitle">Manage your account credentials and preferences</p>
+    </div>
+
+    <?php if ($success): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
+    <?php endif; ?>
+
+    <?php if ($error): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
+
+    <!-- Account Statistics -->
+    <?php if ($stats): ?>
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 class="card-title">📊 Account Statistics</h2>
+        <div class="stat-grid">
+            <?php if ($_SESSION['user_type'] === 'employee'): ?>
+                <div class="stat-box">
+                    <div class="stat-value"><?= $stats['total_tickets'] ?? 0 ?></div>
+                    <div class="stat-label">Total Tickets</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?= $stats['pending'] ?? 0 ?></div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?= $stats['active'] ?? 0 ?></div>
+                    <div class="stat-label">Active</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?= $stats['resolved'] ?? 0 ?></div>
+                    <div class="stat-label">Resolved</div>
+                </div>
+            <?php elseif ($_SESSION['user_type'] === 'service_provider'): ?>
+                <div class="stat-box">
+                    <div class="stat-value"><?= $stats['total_tickets'] ?? 0 ?></div>
+                    <div class="stat-label">Total Tickets</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?= $stats['active'] ?? 0 ?></div>
+                    <div class="stat-label">Active</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?= number_format($stats['avg_resolution_hours'] ?? 0, 1) ?>h</div>
+                    <div class="stat-label">Avg Resolution</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?= number_format($stats['avg_rating'] ?? 0, 1) ?>⭐</div>
+                    <div class="stat-label">Rating</div>
+                </div>
+            <?php else: ?>
+                <div class="stat-box">
+                    <div class="stat-value"><?= $stats['total_tickets'] ?? 0 ?></div>
+                    <div class="stat-label">Total Tickets</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?= $stats['pending'] ?? 0 ?></div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?= $stats['active'] ?? 0 ?></div>
+                    <div class="stat-label">Active</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?= $stats['resolved'] ?? 0 ?></div>
+                    <div class="stat-label">Resolved</div>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Quick Links -->
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 class="card-title">🔗 Quick Access</h2>
+        <div class="quick-links">
+            <a href="printables/index.php" class="quick-link">
+                <span class="quick-link-icon">📊</span>
+                <span class="quick-link-text">Reports & Printables</span>
+            </a>
+            <?php if ($_SESSION['user_type'] === 'admin'): ?>
+            <a href="admin/analytics.php" class="quick-link">
+                <span class="quick-link-icon">📈</span>
+                <span class="quick-link-text">System Analytics</span>
+            </a>
+            <a href="admin/manage_tickets.php" class="quick-link">
+                <span class="quick-link-icon">🎫</span>
+                <span class="quick-link-text">Manage Tickets</span>
+            </a>
+            <a href="admin/manage_users.php" class="quick-link">
+                <span class="quick-link-icon">👥</span>
+                <span class="quick-link-text">Manage Users</span>
+            </a>
+            <?php elseif ($_SESSION['user_type'] === 'employee'): ?>
+            <a href="tickets/list.php" class="quick-link">
+                <span class="quick-link-icon">🎫</span>
+                <span class="quick-link-text">My Tickets</span>
+            </a>
+            <a href="tickets/create.php" class="quick-link">
+                <span class="quick-link-icon">➕</span>
+                <span class="quick-link-text">Create Ticket</span>
+            </a>
+            <?php else: ?>
+            <a href="provider/my_tickets.php" class="quick-link">
+                <span class="quick-link-icon">🎫</span>
+                <span class="quick-link-text">My Assignments</span>
+            </a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Account Information & Settings -->
+    <div class="content-grid">
+        <!-- Account Info -->
+        <div class="card">
+            <h2 class="card-title">ℹ️ Account Information</h2>
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span><?= htmlspecialchars($profile['email']) ?></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Account Type:</span>
+                <span style="text-transform: capitalize"><?= str_replace('_', ' ', $_SESSION['user_type']) ?></span>
+            </div>
+            <?php if ($_SESSION['user_type'] === 'employee'): ?>
+            <div class="info-row">
+                <span class="info-label">Name:</span>
+                <span><?= htmlspecialchars($profile['profile']['first_name'] . ' ' . $profile['profile']['last_name']) ?></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Department:</span>
+                <span><?= htmlspecialchars($profile['profile']['department_name']) ?></span>
+            </div>
+            <?php elseif ($_SESSION['user_type'] === 'service_provider'): ?>
+            <div class="info-row">
+                <span class="info-label">Provider Name:</span>
+                <span><?= htmlspecialchars($profile['profile']['provider_name']) ?></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Specialization:</span>
+                <span><?= htmlspecialchars($profile['profile']['specialization'] ?? 'General') ?></span>
+            </div>
+            <?php endif; ?>
+            <div class="info-row">
+                <span class="info-label">Member Since:</span>
+                <span><?= date('M j, Y', strtotime($profile['created_at'])) ?></span>
+            </div>
+        </div>
+
+        <!-- Gmail Binding -->
+        <div class="card">
+            <h2 class="card-title">📧 Gmail Notifications</h2>
+            <form method="POST">
+                <div class="form-group">
+                    <label>Bound Gmail Address</label>
+                    <input type="email" 
+                           name="gmail" 
+                           placeholder="your.email@gmail.com"
+                           value="<?= htmlspecialchars($profile['bound_gmail'] ?? '') ?>">
+                    <div class="help-text">
+                        <?php if ($_SESSION['user_type'] === 'admin'): ?>
+                            ⚠️ Admin accounts do not receive Gmail notifications
+                        <?php else: ?>
+                            ✉️ Receive system notifications at this Gmail address
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <button type="submit" name="update_gmail" class="btn btn-primary">
+                    Update Gmail Binding
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Job Position (Employee Only) -->
+    <?php if ($_SESSION['user_type'] === 'employee'): ?>
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 class="card-title">💼 Job Position</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label>Current Position</label>
+                <input type="text" 
+                       name="job_position" 
+                       placeholder="e.g., Software Engineer, HR Manager"
+                       value="<?= htmlspecialchars($profile['job_position'] ?? '') ?>">
+                <div class="help-text">
+                    Your role or position in the company
+                </div>
+            </div>
+            <button type="submit" name="update_job_position" class="btn btn-primary">
+                Update Job Position
+            </button>
+        </form>
+    </div>
+    <?php endif; ?>
+
+    <!-- Sign Out -->
+    <div class="card">
+        <h2 class="card-title">🚪 Sign Out</h2>
+        <p style="margin-bottom: 16px; color: var(--text-secondary);">
+            End your current session and return to the login page
+        </p>
+        <a href="logout.php" class="btn btn-danger" onclick="return confirm('Are you sure you want to sign out?')">
+            Sign Out
+        </a>
+    </div>
+</div>
+
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/notifications.js"></script>
+</body>
+</html>
