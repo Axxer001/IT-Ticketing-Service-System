@@ -1,7 +1,7 @@
 <?php
 /**
  * Optimized Database Connection Class
- * FIXED: Persistent connections for faster queries
+ * FIXED: Better error handling and connection management
  */
 class Database {
     private $host = "localhost";
@@ -22,15 +22,24 @@ class Database {
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES => false,
-                    PDO::ATTR_PERSISTENT => true, // OPTIMIZED: Use persistent connections
-                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
-                    PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true, // OPTIMIZED: Buffer queries
+                    PDO::ATTR_PERSISTENT => true,
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
                 ];
                 
                 $this->conn = new PDO($dsn, $this->username, $this->password, $options);
+                
             } catch (PDOException $e) {
                 error_log("Database Connection Error: " . $e->getMessage());
-                throw new Exception("Database connection failed. Please try again later.");
+                
+                // Try without database name (in case database doesn't exist)
+                try {
+                    $dsn = "mysql:host={$this->host};charset=utf8mb4";
+                    $this->conn = new PDO($dsn, $this->username, $this->password, $options);
+                    error_log("Connected to MySQL server, but database '{$this->dbname}' may not exist");
+                } catch (PDOException $e2) {
+                    error_log("Failed to connect to MySQL server: " . $e2->getMessage());
+                    throw new Exception("Database connection failed. Please check your configuration.");
+                }
             }
         }
         
@@ -63,5 +72,19 @@ class Database {
      */
     public function lastInsertId() {
         return $this->connect()->lastInsertId();
+    }
+    
+    /**
+     * Check if database exists
+     */
+    public function databaseExists() {
+        try {
+            $sql = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?";
+            $stmt = $this->connect()->prepare($sql);
+            $stmt->execute([$this->dbname]);
+            return $stmt->fetch() !== false;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }
