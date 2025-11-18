@@ -9,6 +9,7 @@ $success = '';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     try {
         $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
+        $boundGmail = filter_var($_POST['bound_gmail'], FILTER_SANITIZE_EMAIL);
         $password = $_POST['password'];
         $confirmPassword = $_POST['confirm_password'];
         $userType = $_POST['user_type'];
@@ -16,6 +17,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Validation
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new Exception("Invalid email format");
+        }
+        
+        if (!empty($boundGmail) && !filter_var($boundGmail, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception("Invalid Gmail format");
         }
         
         if (strlen($password) < 6) {
@@ -44,10 +49,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ];
         }
         
-        $userId = $user->register($email, $password, $userType, $additionalData);
+        // Create verification request instead of direct registration
+        $verificationId = $user->createVerificationRequest($email, $password, $userType, $boundGmail, $additionalData);
         
-        if ($userId) {
-            $success = "Registration successful! You can now login.";
+        if ($verificationId) {
+            $success = "Account verification request submitted! An administrator will review your request. You will receive an email notification once your account is approved.";
         }
         
     } catch (Exception $e) {
@@ -65,7 +71,7 @@ $departments = $user->getDepartmentsByCategory();
 <title>Create Account - Nexon Ticketing</title>
 <link rel="stylesheet" href="../assets/css/theme.css">
 <script>
-    const PHP_SESSION_THEME = 'light'; // Not logged in yet
+    const PHP_SESSION_THEME = 'light';
 </script>
 <style>
 * {
@@ -140,7 +146,7 @@ body {
 .alert-success {
     background: #efe;
     color: #3c3;
-    border-left: 4px solid: #3c3;
+    border-left: 4px solid #3c3;
 }
 
 .form-group {
@@ -179,6 +185,12 @@ input:focus, select:focus, textarea:focus {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 15px;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
 }
 
 .btn {
@@ -268,12 +280,20 @@ optgroup {
             </select>
         </div>
 
-        <!-- Email & Password -->
+        <!-- Email & Gmail -->
         <div class="form-group">
-            <label>Email Address <span class="required">*</span></label>
+            <label>Email Address (System Login) <span class="required">*</span></label>
             <input type="email" name="email" placeholder="your.email@nexon.com" required>
+            <div class="help-text">This will be your login username</div>
         </div>
 
+        <div class="form-group">
+            <label>Gmail Address (For Email Notifications) <span class="required">*</span></label>
+            <input type="email" name="bound_gmail" placeholder="your.personal@gmail.com" required>
+            <div class="help-text">📧 Verification results and system notifications will be sent here</div>
+        </div>
+
+        <!-- Password -->
         <div class="form-row">
             <div class="form-group">
                 <label>Password <span class="required">*</span></label>
@@ -336,7 +356,7 @@ optgroup {
             </div>
         </div>
 
-        <button type="submit" class="btn">Create Account</button>
+        <button type="submit" class="btn">Submit Request</button>
     </form>
 
     <div class="text-center">
@@ -353,7 +373,6 @@ function toggleFields() {
     employeeFields.classList.add('hidden');
     providerFields.classList.add('hidden');
     
-    // Remove required from all conditional fields first
     document.getElementById('firstName').removeAttribute('required');
     document.getElementById('lastName').removeAttribute('required');
     document.getElementById('departmentId').removeAttribute('required');
@@ -370,7 +389,6 @@ function toggleFields() {
     }
 }
 
-// Password match validation
 document.getElementById('registerForm').addEventListener('submit', function(e) {
     const password = document.getElementById('password').value;
     const confirmPassword = document.querySelector('input[name="confirm_password"]').value;

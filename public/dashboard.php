@@ -625,6 +625,11 @@ tbody tr:hover {
                 <span class="menu-icon">👥</span>
                 <span class="menu-text">Manage Users</span>
             </a>
+            <!-- NEW: Account Verifications -->
+            <a href="admin/account_verifications.php" class="menu-item">
+                <span class="menu-icon">✅</span>
+                <span class="menu-text">Account Verifications</span>
+            </a>
             <a href="admin/analytics.php" class="menu-item">
                 <span class="menu-icon">📊</span>
                 <span class="menu-text">Analytics</span>
