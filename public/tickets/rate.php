@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'employee') {
     header("Location: ../login.php");
     exit;
 }
+require_once "../includes/sidebar_component.php";
 
 $ticketObj = new Ticket();
 $userObj = new User();
@@ -74,10 +75,6 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg-main);
     color: var(--text-primary);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 24px;
 }
 
@@ -190,6 +187,8 @@ textarea:focus {
 </head>
 <body>
 
+<div class="main-content">
+<div class="container" style="display:flex; justify-content:center; align-items:center; min-height:80vh;">
 <div class="card">
     <h1 class="page-title">Rate Service</h1>
     <p class="page-subtitle">How would you rate the service provided by <?= htmlspecialchars($ticket['provider_name']) ?>?</p>
@@ -214,6 +213,8 @@ textarea:focus {
 
         <button type="submit" class="btn" id="submitBtn" disabled>Submit Rating</button>
     </form>
+</div>
+</div>
 </div>
 
 <script>

@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'employee') {
     exit;
 }
 
+
 $userObj = new User();
 $ticketObj = new Ticket();
 $profile = $userObj->getUserProfile($_SESSION['user_id']);
@@ -294,12 +295,11 @@ textarea {
 </style>
 </head>
 <body>
+<?php require_once "../includes/sidebar_component.php"; ?>
 
-<nav class="navbar">
-    <div class="navbar-brand">NEXON</div>
-    <a href="../dashboard.php" class="back-btn">← Dashboard</a>
-</nav>
 
+
+<div class="main-content">
 <div class="container">
     <div class="page-header">
         <h1 class="page-title">Create New Ticket</h1>
@@ -388,6 +388,7 @@ textarea {
         </form>
     </div>
 </div>
+</div>
 
 <script>
 // File handling
@@ -415,6 +416,10 @@ document.getElementById('ticketForm').addEventListener('submit', function(e) {
     submitBtn.textContent = 'Creating ticket...';
 });
 </script>
-<script src="../../assets/js/theme.js"></script>
+<script>
+    const PHP_SESSION_THEME = <?= json_encode($_SESSION['theme'] ?? 'light') ?>;
+</script>
+<script src="../../assets/js/theme.js?v=2"></script>
+<script src="../../assets/js/notifications.js?v=2"></script>
 </body>
 </html>

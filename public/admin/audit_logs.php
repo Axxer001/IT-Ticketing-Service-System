@@ -6,6 +6,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     header("Location: ../login.php");
     exit;
 }
+require_once "../includes/sidebar_component.php";
 
 $auditObj = new AuditLog();
 $filters = [];
@@ -152,11 +153,9 @@ td {
 </head>
 <body>
 
-<nav class="navbar">
-    <div class="navbar-brand">NEXON</div>
-    <a href="../dashboard.php" class="back-btn">← Dashboard</a>
-</nav>
 
+
+<div class="main-content">
 <div class="container">
     <div class="page-header">
         <h1 class="page-title">Audit Logs</h1>
@@ -189,6 +188,7 @@ td {
             </tbody>
         </table>
     </div>
+</div>
 </div>
 <script src="../../assets/js/theme.js"></script>
 <script src="../../assets/js/notifications.js"></script>

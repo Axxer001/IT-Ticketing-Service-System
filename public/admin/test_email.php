@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     exit;
 }
 
+
 $result = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_email'])) {
@@ -34,43 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_email'])) {
     const PHP_SESSION_THEME = <?= json_encode($_SESSION['theme'] ?? 'light') ?>;
 </script>
 <style>
-:root {
-    --primary: #667eea;
-    --secondary: #764ba2;
-    --success: #10b981;
-    --danger: #ef4444;
-    --bg-main: #f8fafc;
-    --bg-card: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --border-color: #e2e8f0;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="dark"] {
-    --bg-main: #0f172a;
-    --bg-card: #1e293b;
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --border-color: #334155;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg-main);
-    color: var(--text-primary);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-}
-
+/* Page Specific Styles */
 .container {
-    max-width: 600px;
+    max-width: 800px;
     width: 100%;
+    margin: 40px auto;
 }
 
 .card {
@@ -228,7 +197,9 @@ input:focus {
 </style>
 </head>
 <body>
+<?php require_once "../includes/sidebar_component.php"; ?>
 
+<div class="main-content">
 <div class="container">
     <div class="card">
         <h1 class="page-title">📧 Test Email Configuration</h1>
@@ -290,9 +261,7 @@ input:focus {
                 Send Test Email
             </button>
             
-            <a href="../dashboard.php" class="btn btn-secondary" style="display:block; text-align:center; text-decoration:none">
-                ← Back to Dashboard
-            </a>
+            </button>
         </form>
 
         <div class="info-box">
@@ -307,7 +276,9 @@ input:focus {
         </div>
     </div>
 </div>
+</div>
 
-<script src="../../assets/js/theme.js"></script>
+<script src="../../assets/js/theme.js?v=2"></script>
+<script src="../../assets/js/notifications.js?v=2"></script>
 </body>
 </html>

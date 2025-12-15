@@ -6,6 +6,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     exit;
 }
 
+
 // Check PHP extensions
 $checks = [];
 
@@ -77,32 +78,7 @@ if ($errorLogPath && file_exists($errorLogPath)) {
 <title>Email Diagnostic Tool - Nexon</title>
 <link rel="stylesheet" href="../../assets/css/theme.css">
 <style>
-:root {
-    --primary: #667eea;
-    --success: #10b981;
-    --danger: #ef4444;
-    --bg-main: #f8fafc;
-    --bg-card: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --border-color: #e2e8f0;
-}
-
-[data-theme="dark"] {
-    --bg-main: #0f172a;
-    --bg-card: #1e293b;
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --border-color: #334155;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg-main);
-    color: var(--text-primary);
-    padding: 24px;
-}
-
+/* Page Specific Styles */
 .container {
     max-width: 900px;
     margin: 0 auto;
@@ -189,7 +165,9 @@ pre {
 </style>
 </head>
 <body>
+<?php require_once "../includes/sidebar_component.php"; ?>
 
+<div class="main-content">
 <div class="container">
     <h1 class="page-title">🔍 Email Diagnostic Tool</h1>
     <p style="color: var(--text-secondary); margin-bottom: 24px;">
@@ -254,7 +232,7 @@ pre {
 
     <div style="display: flex; gap: 12px; margin-top: 24px;">
         <a href="test_email.php" class="btn btn-primary">Go to Email Test Tool</a>
-        <a href="../dashboard.php" class="btn" style="background: var(--bg-main); color: var(--text-primary);">← Back to Dashboard</a>
+
     </div>
 
     <div class="card" style="margin-top: 24px;">
@@ -283,7 +261,9 @@ pre {
         </div>
     </div>
 </div>
+</div>
 
-<script src="../../assets/js/theme.js"></script>
+<script src="../../assets/js/theme.js?v=2"></script>
+<script src="../../assets/js/notifications.js?v=2"></script>
 </body>
 </html>

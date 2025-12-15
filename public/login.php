@@ -277,6 +277,7 @@ input:focus {
     }
 }
 </style>
+
 </head>
 <body>
 
@@ -300,8 +301,22 @@ input:focus {
 
         <div class="form-group">
             <label>Password</label>
-            <input type="password" name="password" placeholder="Enter your password" required>
+            <div class="password-wrapper" style="position: relative;">
+                <input type="password" name="password" id="password" placeholder="Enter your password" required>
+                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password')" 
+                        style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; color: #666;">
+                    👁️
+                </button>
+            </div>
         </div>
+
+    <script>
+    function togglePasswordVisibility(inputId) {
+        const passwordInput = document.getElementById(inputId);
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+    }
+    </script>
 
         <button type="submit" class="btn">Sign In</button>
     </form>

@@ -297,11 +297,17 @@ optgroup {
         <div class="form-row">
             <div class="form-group">
                 <label>Password <span class="required">*</span></label>
-                <input type="password" name="password" id="password" placeholder="Minimum 6 characters" required minlength="6">
+                <div class="password-wrapper" style="position: relative;">
+                    <input type="password" name="password" id="password" placeholder="Minimum 6 characters" required minlength="6">
+                    <button type="button" onclick="togglePassword('password')" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; color: #666;">👁️</button>
+                </div>
             </div>
             <div class="form-group">
                 <label>Confirm Password <span class="required">*</span></label>
-                <input type="password" name="confirm_password" placeholder="Re-enter password" required>
+                <div class="password-wrapper" style="position: relative;">
+                    <input type="password" name="confirm_password" id="confirm_password" placeholder="Re-enter password" required>
+                    <button type="button" onclick="togglePassword('confirm_password')" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; color: #666;">👁️</button>
+                </div>
             </div>
         </div>
 
@@ -365,6 +371,12 @@ optgroup {
 </div>
 
 <script>
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+}
+
 function toggleFields() {
     const userType = document.getElementById('userType').value;
     const employeeFields = document.getElementById('employeeFields');

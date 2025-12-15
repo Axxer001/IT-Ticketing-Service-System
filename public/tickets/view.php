@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+
 $ticketObj = new Ticket();
 $ticketId = $_GET['id'] ?? 0;
 $ticket = $ticketObj->getById($ticketId);
@@ -339,15 +340,11 @@ textarea:focus {
 </style>
 </head>
 <body>
+    <?php require_once "../includes/sidebar_component.php"; ?>
 
-<nav class="navbar">
-    <div class="navbar-brand">NEXON</div>
-    <div style="display:flex; gap:12px;">
-        <a href="../printables/index.php" class="back-btn">📊 Reports</a>
-        <a href="../dashboard.php" class="back-btn">← Dashboard</a>
-    </div>
-</nav>
 
+
+<div class="main-content">
 <div class="container">
     <div class="ticket-header">
         <div class="ticket-number">Ticket #<?= htmlspecialchars($ticket['ticket_number']) ?></div>
@@ -467,6 +464,7 @@ textarea:focus {
             <?php endif; ?>
         </div>
     </div>
+</div>
 </div>
 <script src="../../assets/js/theme.js"></script>
 <script src="../../assets/js/notifications.js"></script>

@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     header("Location: ../login.php");
     exit;
 }
+require_once "../includes/sidebar_component.php";
 
 $ticketObj = new Ticket();
 $userObj = new User();
@@ -377,15 +378,9 @@ tbody tr:hover {
 </head>
 <body>
 
-<nav class="navbar">
-    <div class="navbar-brand">NEXON ADMIN</div>
-<div class="navbar-actions">
-    <a href="../printables/index.php" class="btn-analytics">📊 Reports</a>
-    <a href="analytics.php" class="btn-analytics">📊 Analytics</a>
-    <a href="../dashboard.php" class="back-btn">← Dashboard</a>
-</div>
-</nav>
 
+
+<div class="main-content">
 <div class="container">
     <div class="page-header">
         <h1 class="page-title">Manage All Tickets</h1>
@@ -542,6 +537,7 @@ tbody tr:hover {
             </div>
         <?php endif; ?>
     </div>
+</div>
 </div>
 
 <script src="../../assets/js/theme.js"></script>
