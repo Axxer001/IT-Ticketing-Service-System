@@ -400,7 +400,7 @@ textarea:focus {
                         <div class="timeline-dot"></div>
                         <div class="timeline-header">
                             <span class="timeline-user"><?= htmlspecialchars($update['email']) ?></span>
-                            <span class="timeline-time"><?= date('M j, g:i A', strtotime($update['created_at'])) ?></span>
+                            <span class="timeline-time"><?= (new DateTime($update['created_at']))->setTimezone(new DateTimeZone('Asia/Manila'))->format('M j, g:i A') ?></span>
                         </div>
                         <div class="timeline-content"><?= nl2br(htmlspecialchars($update['message'])) ?></div>
                     </div>

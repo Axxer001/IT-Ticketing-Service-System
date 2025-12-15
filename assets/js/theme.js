@@ -4,7 +4,7 @@
  * FIXED VERSION
  */
 
-(function() {
+(function () {
     'use strict';
 
     // Theme Manager Class
@@ -20,13 +20,13 @@
         init() {
             // Apply theme on page load
             this.applyTheme(this.currentTheme);
-            
+
             // Setup theme toggle buttons
             this.setupToggleButtons();
-            
+
             // Listen for system theme changes
             this.watchSystemTheme();
-            
+
             // Expose to window for external access
             window.ThemeManager = this;
         }
@@ -38,12 +38,12 @@
             // Check localStorage first
             const stored = localStorage.getItem('theme');
             if (stored) return stored;
-            
+
             // Check session (from PHP)
             if (typeof PHP_SESSION_THEME !== 'undefined') {
                 return PHP_SESSION_THEME;
             }
-            
+
             return null;
         }
 
@@ -63,19 +63,19 @@
         applyTheme(theme) {
             const html = document.documentElement;
             const oldTheme = html.getAttribute('data-theme');
-            
+
             // Set theme attribute
             html.setAttribute('data-theme', theme);
-            
+
             // Update all theme toggle buttons
             this.updateToggleButtons(theme);
-            
+
             // Store theme
             this.storeTheme(theme);
-            
+
             // Trigger custom event
             this.dispatchThemeChange(theme, oldTheme);
-            
+
             this.currentTheme = theme;
         }
 
@@ -85,7 +85,7 @@
         storeTheme(theme) {
             // Store in localStorage
             localStorage.setItem('theme', theme);
-            
+
             // Send to server to update session/database
             this.syncThemeToServer(theme);
         }
@@ -105,15 +105,15 @@
                 },
                 body: JSON.stringify({ theme: theme })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Theme synced to server:', theme);
-                }
-            })
-            .catch(error => {
-                console.warn('Failed to sync theme to server:', error);
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Theme synced to server:', theme);
+                    }
+                })
+                .catch(error => {
+                    console.warn('Failed to sync theme to server:', error);
+                });
         }
 
         /**
@@ -121,10 +121,13 @@
          */
         getApiPath() {
             const path = window.location.pathname;
-            
+
             // Determine relative path to api folder
-            if (path.includes('/admin/') || path.includes('/tickets/') || 
-                path.includes('/provider/') || path.includes('/reports/')) {
+            if (path.includes('/admin/') || path.includes('/tickets/') ||
+                path.includes('/provider/') || path.includes('/reports/') ||
+                path.includes('/search/') || path.includes('/calendar/') ||
+                path.includes('/sla/') || path.includes('/batch/') ||
+                path.includes('/analytics/') || path.includes('/printables/')) {
                 return '../../api/update_theme.php';
             } else if (path.includes('/public/')) {
                 return '../api/update_theme.php';
@@ -140,7 +143,7 @@
         toggle() {
             const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
             this.applyTheme(newTheme);
-            
+
             // Add transition animation
             this.addTransitionAnimation();
         }
@@ -151,7 +154,7 @@
         addTransitionAnimation() {
             const html = document.documentElement;
             html.style.transition = 'background-color 0.3s ease, color 0.3s ease';
-            
+
             setTimeout(() => {
                 html.style.transition = '';
             }, 300);
@@ -162,14 +165,14 @@
          */
         setupToggleButtons() {
             const buttons = document.querySelectorAll('[data-theme-toggle], .theme-toggle, #themeToggle');
-            
+
             buttons.forEach(button => {
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.toggle();
                 });
             });
-            
+
             // Initial button state
             this.updateToggleButtons(this.currentTheme);
         }
@@ -179,7 +182,7 @@
          */
         updateToggleButtons(theme) {
             const buttons = document.querySelectorAll('[data-theme-toggle], .theme-toggle, #themeToggle');
-            
+
             buttons.forEach(button => {
                 if (button.hasAttribute('data-theme-icon')) {
                     // Use data attributes for icon
@@ -190,9 +193,9 @@
                     // Default icons
                     button.textContent = theme === 'light' ? '🌙' : '☀️';
                 }
-                
+
                 // Update aria-label for accessibility
-                button.setAttribute('aria-label', 
+                button.setAttribute('aria-label',
                     theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'
                 );
             });
@@ -203,9 +206,9 @@
          */
         watchSystemTheme() {
             if (!window.matchMedia) return;
-            
+
             const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            
+
             darkModeQuery.addEventListener('change', (e) => {
                 // Only auto-switch if user hasn't manually set a preference
                 const hasManualPreference = localStorage.getItem('theme');
@@ -265,19 +268,19 @@
     }
 
     // Global helper functions
-    window.toggleTheme = function() {
+    window.toggleTheme = function () {
         if (window.ThemeManager) {
             window.ThemeManager.toggle();
         }
     };
 
-    window.setTheme = function(theme) {
+    window.setTheme = function (theme) {
         if (window.ThemeManager) {
             window.ThemeManager.setTheme(theme);
         }
     };
 
-    window.getTheme = function() {
+    window.getTheme = function () {
         return window.ThemeManager ? window.ThemeManager.getTheme() : 'light';
     };
 

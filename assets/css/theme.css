@@ -12,7 +12,10 @@
     --primary-dark: #5568d3;
     --secondary: #764ba2;
     --secondary-dark: #63408a;
-    
+
+    /* Layout */
+    --sidebar-width: 260px;
+
     /* Status Colors */
     --success: #10b981;
     --success-light: #d1fae5;
@@ -22,19 +25,19 @@
     --danger-light: #fee2e2;
     --info: #3b82f6;
     --info-light: #dbeafe;
-    
+
     /* Background Colors */
     --bg-main: #f8fafc;
     --bg-card: #ffffff;
     --bg-hover: #f1f5f9;
     --bg-overlay: rgba(0, 0, 0, 0.5);
-    
+
     /* Text Colors */
     --text-primary: #1e293b;
     --text-secondary: #64748b;
     --text-muted: #94a3b8;
     --text-inverse: #ffffff;
-    
+
     /* Border & Shadow */
     --border-color: #e2e8f0;
     --border-focus: var(--primary);
@@ -42,12 +45,12 @@
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    
+
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
     --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    
+
     /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-base: 0.3s ease;
@@ -63,7 +66,7 @@
     --primary-dark: #6d28d9;
     --secondary: #a78bfa;
     --secondary-dark: #8b5cf6;
-    
+
     /* Status Colors */
     --success: #34d399;
     --success-light: rgba(52, 211, 153, 0.1);
@@ -73,19 +76,19 @@
     --danger-light: rgba(248, 113, 113, 0.1);
     --info: #60a5fa;
     --info-light: rgba(96, 165, 250, 0.1);
-    
+
     /* Background Colors */
     --bg-main: #0f172a;
     --bg-card: #1e293b;
     --bg-hover: #334155;
     --bg-overlay: rgba(0, 0, 0, 0.7);
-    
+
     /* Text Colors */
     --text-primary: #f1f5f9;
     --text-secondary: #cbd5e1;
     --text-muted: #94a3b8;
     --text-inverse: #0f172a;
-    
+
     /* Border & Shadow */
     --border-color: #334155;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -116,19 +119,41 @@ body {
 /* =====================================================
    TYPOGRAPHY
    ===================================================== */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     color: var(--text-primary);
     font-weight: 700;
     line-height: 1.2;
     transition: color var(--transition-base);
 }
 
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; }
-h3 { font-size: 1.75rem; }
-h4 { font-size: 1.5rem; }
-h5 { font-size: 1.25rem; }
-h6 { font-size: 1rem; }
+h1 {
+    font-size: 2.5rem;
+}
+
+h2 {
+    font-size: 2rem;
+}
+
+h3 {
+    font-size: 1.75rem;
+}
+
+h4 {
+    font-size: 1.5rem;
+}
+
+h5 {
+    font-size: 1.25rem;
+}
+
+h6 {
+    font-size: 1rem;
+}
 
 p {
     margin-bottom: 1rem;
@@ -371,8 +396,15 @@ textarea::placeholder {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
 }
 
 /* =====================================================
@@ -527,63 +559,145 @@ tr:last-child td {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .skeleton {
-    background: linear-gradient(
-        90deg,
-        var(--bg-hover) 25%,
-        var(--border-color) 50%,
-        var(--bg-hover) 75%
-    );
+    background: linear-gradient(90deg,
+            var(--bg-hover) 25%,
+            var(--border-color) 50%,
+            var(--bg-hover) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 0.5rem;
 }
 
 @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 /* =====================================================
    UTILITIES
    ===================================================== */
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.text-left { text-align: left; }
+.text-center {
+    text-align: center;
+}
 
-.text-primary { color: var(--text-primary); }
-.text-secondary { color: var(--text-secondary); }
-.text-muted { color: var(--text-muted); }
-.text-success { color: var(--success); }
-.text-danger { color: var(--danger); }
-.text-warning { color: var(--warning); }
-.text-info { color: var(--info); }
+.text-right {
+    text-align: right;
+}
 
-.bg-main { background: var(--bg-main); }
-.bg-card { background: var(--bg-card); }
+.text-left {
+    text-align: left;
+}
 
-.mt-1 { margin-top: 0.5rem; }
-.mt-2 { margin-top: 1rem; }
-.mt-3 { margin-top: 1.5rem; }
-.mt-4 { margin-top: 2rem; }
+.text-primary {
+    color: var(--text-primary);
+}
 
-.mb-1 { margin-bottom: 0.5rem; }
-.mb-2 { margin-bottom: 1rem; }
-.mb-3 { margin-bottom: 1.5rem; }
-.mb-4 { margin-bottom: 2rem; }
+.text-secondary {
+    color: var(--text-secondary);
+}
 
-.p-1 { padding: 0.5rem; }
-.p-2 { padding: 1rem; }
-.p-3 { padding: 1.5rem; }
-.p-4 { padding: 2rem; }
+.text-muted {
+    color: var(--text-muted);
+}
 
-.d-none { display: none; }
-.d-block { display: block; }
-.d-flex { display: flex; }
-.d-grid { display: grid; }
+.text-success {
+    color: var(--success);
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.text-warning {
+    color: var(--warning);
+}
+
+.text-info {
+    color: var(--info);
+}
+
+.bg-main {
+    background: var(--bg-main);
+}
+
+.bg-card {
+    background: var(--bg-card);
+}
+
+.mt-1 {
+    margin-top: 0.5rem;
+}
+
+.mt-2 {
+    margin-top: 1rem;
+}
+
+.mt-3 {
+    margin-top: 1.5rem;
+}
+
+.mt-4 {
+    margin-top: 2rem;
+}
+
+.mb-1 {
+    margin-bottom: 0.5rem;
+}
+
+.mb-2 {
+    margin-bottom: 1rem;
+}
+
+.mb-3 {
+    margin-bottom: 1.5rem;
+}
+
+.mb-4 {
+    margin-bottom: 2rem;
+}
+
+.p-1 {
+    padding: 0.5rem;
+}
+
+.p-2 {
+    padding: 1rem;
+}
+
+.p-3 {
+    padding: 1.5rem;
+}
+
+.p-4 {
+    padding: 2rem;
+}
+
+.d-none {
+    display: none;
+}
+
+.d-block {
+    display: block;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.d-grid {
+    display: grid;
+}
 
 .flex-center {
     display: flex;
@@ -591,31 +705,48 @@ tr:last-child td {
     justify-content: center;
 }
 
-.gap-1 { gap: 0.5rem; }
-.gap-2 { gap: 1rem; }
-.gap-3 { gap: 1.5rem; }
+.gap-1 {
+    gap: 0.5rem;
+}
+
+.gap-2 {
+    gap: 1rem;
+}
+
+.gap-3 {
+    gap: 1.5rem;
+}
 
 /* =====================================================
    RESPONSIVE
    ===================================================== */
 @media (max-width: 768px) {
-    h1 { font-size: 2rem; }
-    h2 { font-size: 1.75rem; }
-    h3 { font-size: 1.5rem; }
-    
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.75rem;
+    }
+
+    h3 {
+        font-size: 1.5rem;
+    }
+
     .card {
         padding: 1rem;
     }
-    
+
     .btn {
         padding: 0.625rem 1.25rem;
     }
-    
+
     table {
         font-size: 0.875rem;
     }
-    
-    th, td {
+
+    th,
+    td {
         padding: 0.5rem;
     }
 }
@@ -628,13 +759,164 @@ tr:last-child td {
         background: white;
         color: black;
     }
-    
+
     .no-print {
         display: none !important;
     }
-    
+
     .card {
         box-shadow: none;
         border: 1px solid #ddd;
+    }
+}
+
+
+/* =====================================================
+   ANIMATIONS
+   ===================================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+.slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+}
+
+/* Staggered animation delays for children */
+.animate-children>* {
+    opacity: 0;
+    animation: slideUp 0.5s ease-out forwards;
+}
+
+.animate-children>*:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.animate-children>*:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.animate-children>*:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.animate-children>*:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.animate-children>*:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+/* Smooth Tab Transitions */
+.tab-content {
+    transition: opacity 0.3s ease;
+}
+
+
+/* =====================================================
+   MOBILE RESPONSIVENESS
+   ===================================================== */
+@media (max-width: 768px) {
+
+    /* Sidebar Layout */
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        width: 280px;
+        /* Slightly wider for better touch targets */
+    }
+
+    /* Support both .active and .show to match different JS toggles */
+    .sidebar.active,
+    .sidebar.show {
+        transform: translateX(0);
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Main Content */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 1rem;
+    }
+
+    /* Grid/Flex Stacking */
+    .row,
+    .d-flex,
+    .grid-2 {
+        flex-direction: column;
+        display: flex;
+    }
+
+    .grid-2 {
+        gap: 1rem;
+    }
+
+    /* Cards */
+    .card {
+        margin-bottom: 1rem;
+        /* Critical for dashboards with tables: Allow horizontal scroll inside card */
+        overflow-x: auto;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        /* Stack stats cards */
+    }
+
+    /* Tables */
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        min-width: 600px;
+        /* Force scroll for wide tables - will scroll inside .card */
+    }
+
+    /* Forms */
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+        font-size: 16px;
+        /* Prevent zoom on iOS */
+    }
+
+    /* Modals */
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
     }
 }
